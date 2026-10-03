@@ -23,3 +23,9 @@ export const request = z.strictObject(
   },
   { error: 'Debe ser un objeto JSON con únicamente insuredId, scheduleId y countryISO.' },
 );
+
+export const appointment = request.extend({
+  appointmentId: z.uuid(),
+  status: z.enum(['pending', 'completed']),
+  createdAt: z.iso.datetime(),
+});

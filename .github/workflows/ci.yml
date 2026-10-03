@@ -18,7 +18,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: docker compose up -d --wait
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm format
       - run: pnpm test
+      - run: pnpm local:dynamo
+      - run: pnpm integration
+      - if: always()
+        run: docker compose down
