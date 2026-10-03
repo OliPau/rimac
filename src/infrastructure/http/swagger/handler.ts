@@ -1,7 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import { swaggerAssets } from './assets.ts';
-export async function publicSwagger(event: APIGatewayProxyEventV2) {
+export async function publicSwagger(
+  event: APIGatewayProxyEventV2,
+  readAsset: (path: string, encoding: 'utf8') => Promise<string> = readFile,
+) {
   if (event.rawPath === '/swagger') {
     return { statusCode: 308, headers: { location: '/swagger/index.html' } };
   }
@@ -12,6 +15,6 @@ export async function publicSwagger(event: APIGatewayProxyEventV2) {
   return {
     statusCode: 200,
     headers: { 'content-type': asset.type, 'cache-control': 'no-store' },
-    body: await readFile(asset.file, 'utf8'),
+    body: await readAsset(asset.file, 'utf8'),
   };
 }
