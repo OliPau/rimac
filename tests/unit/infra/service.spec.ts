@@ -5,7 +5,12 @@ test('connects the POST Lambda, appointment table and its execution role', () =>
   const config = service();
 
   expect(config).toMatchObject({
-    provider: { name: 'aws', runtime: 'nodejs24.x', region: 'us-east-1' },
+    provider: {
+      name: 'aws',
+      runtime: 'nodejs24.x',
+      region: 'us-east-1',
+      deploymentBucket: { name: 'rimac-learning-learning-artifacts-${aws:accountId}' },
+    },
     package: { individually: true },
     functions: {
       appointment: {
@@ -51,5 +56,4 @@ test('connects the POST Lambda, appointment table and its execution role', () =>
       },
     },
   });
-  expect(config.provider).not.toHaveProperty('deploymentBucket');
 });

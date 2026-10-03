@@ -1,5 +1,5 @@
 import type { AWS } from '@serverless/typescript';
-import { project, resource } from './config.ts';
+import { prefix, project, resource } from './config.ts';
 import { roles } from './roles.ts';
 import { tables } from './tables.ts';
 import type { Functions } from './types.ts';
@@ -29,6 +29,7 @@ export function service() {
       httpApi: { cors: false },
       stackTags: { Project: project.service },
       tags: { Project: project.service },
+      deploymentBucket: { name: `${prefix}-artifacts-${'${aws:accountId}'}` },
     },
     build: { esbuild: false },
     package: { individually: true },
