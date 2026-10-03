@@ -1,3 +1,8 @@
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, Context } from 'aws-lambda';
 import { handleSwagger } from '../composition/swagger.ts';
-export const handler = (event: APIGatewayProxyEventV2) => handleSwagger(event);
+import { logger } from '../composition/config.ts';
+
+export function handler(event: APIGatewayProxyEventV2, context: Context) {
+  logger.addContext(context);
+  return handleSwagger(event);
+}

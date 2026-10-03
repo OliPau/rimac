@@ -1,5 +1,5 @@
 import type { AWS } from '@serverless/typescript';
-import { prefix, project, resource } from './config.ts';
+import { prefix, project, resource, swaggerSecret } from './config.ts';
 import { roles } from './roles.ts';
 import { tables } from './tables.ts';
 import type { Functions } from './types.ts';
@@ -15,6 +15,17 @@ export function service() {
       events: [
         { httpApi: { method: 'POST', path: '/appointments' } },
         { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
+      ],
+    },
+    swagger: {
+      handler: 'src/handlers/swagger.handler',
+      package: { artifact: '.local/artifacts/swagger.zip' },
+      timeout: 10,
+      role: { 'Fn::GetAtt': ['SwaggerRole', 'Arn'] },
+      environment: { SWAGGER_SECRET_ARN: swaggerSecret },
+      events: [
+        { httpApi: { method: 'GET', path: '/swagger' } },
+        { httpApi: { method: 'GET', path: '/swagger/{proxy+}' } },
       ],
     },
   };

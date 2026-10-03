@@ -1,47 +1,60 @@
-import { prefix } from './config.ts';
-import type { Resources } from './types.ts';
+import { prefix, swaggerSecret } from './config.ts';
+import type { Resource, Resources } from './types.ts';
 
-export function roles(): Resources {
+function lambdaRole(name: string, permissions: Record<string, unknown>[]): Resource {
   return {
-    AppointmentRole: {
-      Type: 'AWS::IAM::Role',
-      Properties: {
-        RoleName: `${prefix}-appointment`,
-        AssumeRolePolicyDocument: {
-          Version: '2012-10-17',
-          Statement: [
-            {
-              Effect: 'Allow',
-              Principal: { Service: 'lambda.amazonaws.com' },
-              Action: 'sts:AssumeRole',
-            },
-          ],
-        },
-        Policies: [
+    Type: 'AWS::IAM::Role',
+    Properties: {
+      RoleName: `${prefix}-${name}`,
+      AssumeRolePolicyDocument: {
+        Version: '2012-10-17',
+        Statement: [
           {
-            PolicyName: 'runtime',
-            PolicyDocument: {
-              Version: '2012-10-17',
-              Statement: [
-                {
-                  Effect: 'Allow',
-                  Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
-                  Resource: {
-                    'Fn::Sub':
-                      'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/' +
-                      `${prefix}-appointment:*`,
-                  },
-                },
-                {
-                  Effect: 'Allow',
-                  Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
-                  Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
-                },
-              ],
-            },
+            Effect: 'Allow',
+            Principal: { Service: 'lambda.amazonaws.com' },
+            Action: 'sts:AssumeRole',
           },
         ],
       },
+      Policies: [
+        {
+          PolicyName: 'runtime',
+          PolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                Effect: 'Allow',
+                Action: ['logs:CreateLogStream', 'logs:PutLogEvents'],
+                Resource: {
+                  'Fn::Sub':
+                    'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/' +
+                    `${prefix}-${name}:*`,
+                },
+              },
+              ...permissions,
+            ],
+          },
+        },
+      ],
     },
+  };
+}
+
+export function roles(): Resources {
+  return {
+    AppointmentRole: lambdaRole('appointment', [
+      {
+        Effect: 'Allow',
+        Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
+        Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
+      },
+    ]),
+    SwaggerRole: lambdaRole('swagger', [
+      {
+        Effect: 'Allow',
+        Action: ['secretsmanager:GetSecretValue'],
+        Resource: swaggerSecret,
+      },
+    ]),
   };
 }

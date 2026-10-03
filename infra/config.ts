@@ -6,3 +6,4 @@ export const project = {
 
 export const prefix = `${project.service}-${project.stage}`;
 export const resource = (name: string) => `${prefix}-${name}`;
+export const swaggerSecret = '${env:SWAGGER_SECRET_ARN}';

@@ -60,3 +60,41 @@ test('connects POST and GET to the appointment table and execution role', () => 
     },
   });
 });
+
+test('exposes Swagger through its own Lambda and secret-scoped role', () => {
+  expect(service()).toMatchObject({
+    functions: {
+      swagger: {
+        handler: 'src/handlers/swagger.handler',
+        package: { artifact: '.local/artifacts/swagger.zip' },
+        role: { 'Fn::GetAtt': ['SwaggerRole', 'Arn'] },
+        environment: { SWAGGER_SECRET_ARN: '${env:SWAGGER_SECRET_ARN}' },
+        events: [
+          { httpApi: { method: 'GET', path: '/swagger' } },
+          { httpApi: { method: 'GET', path: '/swagger/{proxy+}' } },
+        ],
+      },
+    },
+    resources: {
+      Resources: {
+        SwaggerRole: {
+          Properties: {
+            Policies: [
+              {
+                PolicyDocument: {
+                  Statement: [
+                    { Action: ['logs:CreateLogStream', 'logs:PutLogEvents'] },
+                    {
+                      Action: ['secretsmanager:GetSecretValue'],
+                      Resource: '${env:SWAGGER_SECRET_ARN}',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+  });
+});
