@@ -29,3 +29,10 @@ export const appointment = request.extend({
   status: z.enum(['pending', 'completed']),
   createdAt: z.iso.datetime(),
 });
+
+export const acceptance = z.strictObject({
+  appointmentId: z.uuid(),
+  status: z.enum(['pending', 'completed']),
+  message: z.string(),
+  createdAt: z.iso.datetime(),
+});

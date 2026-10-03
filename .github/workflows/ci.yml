@@ -24,6 +24,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm format
       - run: pnpm coverage
+      - run: pnpm openapi
       - run: pnpm bundle
       - run: pnpm inspect:package
       - run: pnpm config:local

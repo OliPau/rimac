@@ -21,9 +21,12 @@
     "config:local": "tsx scripts/config-local.ts",
     "deploy": "pnpm bundle && pnpm config:local && serverless deploy --config serverless.generated.json",
     "api:url": "tsx scripts/api-url.ts",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "openapi": "tsx scripts/openapi.ts",
+    "swagger:local": "tsx scripts/swagger-local.ts"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
     "@aws-sdk/client-cloudformation": "3.1144.0",
     "@jest/globals": "30.5.2",
     "@serverless/typescript": "4.30.0",
@@ -37,6 +40,7 @@
     "jiti": "2.7.0",
     "prettier": "3.9.9",
     "serverless": "4.43.0",
+    "swagger-ui-dist": "5.33.1",
     "ts-jest": "29.4.14",
     "tsx": "4.23.15",
     "typescript": "6.0.3",

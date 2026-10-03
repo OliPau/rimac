@@ -2,12 +2,16 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { transformSync } from 'esbuild';
 import { unzipSync, zipSync } from 'fflate';
+import { swaggerAssets } from '@infrastructure/http/swagger/assets';
 
-const entries: Record<string, string> = { appointment: 'appointment' };
+const entries: Record<string, string> = { appointment: 'appointment', swagger: 'swagger' };
 const maximumEntryBytes = 10 * 1024 * 1024;
 
-function packagePaths(entry: string): string[] {
-  return [`src/handlers/${entry}.cjs`];
+function packagePaths(name: string, entry: string): string[] {
+  return [
+    `src/handlers/${entry}.cjs`,
+    ...(name === 'swagger' ? swaggerAssets.map((asset) => asset.file) : []),
+  ];
 }
 
 export async function packageLocal(
@@ -17,7 +21,7 @@ export async function packageLocal(
   await mkdir(destination, { recursive: true });
   for (const [name, entry] of Object.entries(entries)) {
     const files: Record<string, Uint8Array> = {};
-    for (const path of packagePaths(entry)) {
+    for (const path of packagePaths(name, entry)) {
       files[path] = await readFile(join(source, path));
     }
     await writeFile(join(destination, `${name}.zip`), zipSync(files, { level: 6 }));
@@ -36,7 +40,7 @@ export async function inspectPackages(directory: string): Promise<void> {
     throw new Error('Archive inventory does not match the available Lambda functions');
   }
   for (const [name, entry] of Object.entries(entries)) {
-    const paths = packagePaths(entry);
+    const paths = packagePaths(name, entry);
     const compressed = await readFile(join(directory, `${name}.zip`));
     if (compressed.byteLength > maximumEntryBytes) {
       throw new Error(`Oversized archive: ${name}`);

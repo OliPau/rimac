@@ -56,3 +56,30 @@ if (typeof result !== 'object' || result.statusCode !== 400) {
   throw new Error('The packaged Lambda did not handle the request');
 }
 console.log('Packaged appointment handler loads and responds');
+
+const swaggerArchive = unzipSync(await readFile(join(directory, 'swagger.zip')));
+const decode = (path: string) => new TextDecoder().decode(swaggerArchive[path]);
+const page = decode('static/swagger/index.html');
+for (const path of [
+  '/swagger/swagger-ui.css',
+  '/swagger/swagger-ui-bundle.js',
+  '/swagger/initializer.js',
+]) {
+  if (!page.includes(path)) {
+    throw new Error(`Swagger page does not reference ${path}`);
+  }
+}
+const stylesheet = decode('static/swagger/swagger-ui.css');
+const urls = [...stylesheet.matchAll(/url\(([^)]+)\)/g)];
+if (
+  urls.some(
+    (match) =>
+      !match[1]
+        ?.trim()
+        .replace(/^['"]|['"]$/g, '')
+        .startsWith('data:'),
+  )
+) {
+  throw new Error('Swagger stylesheet requires an external file');
+}
+console.log('Packaged Swagger contains the page and its local assets');
