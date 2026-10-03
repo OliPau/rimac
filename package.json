@@ -18,7 +18,8 @@
     "local:dynamo": "tsx scripts/local-dynamo.ts",
     "bundle": "tsx scripts/bundle.ts && tsx scripts/package-local.ts",
     "inspect:package": "tsx scripts/inspect-package.ts",
-    "config:local": "tsx scripts/config-local.ts"
+    "config:local": "tsx scripts/config-local.ts",
+    "deploy": "pnpm bundle && pnpm config:local && serverless deploy --config serverless.generated.json"
   },
   "devDependencies": {
     "@jest/globals": "30.5.2",
