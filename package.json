@@ -17,7 +17,7 @@
     "integration": "tsx scripts/test.ts integration",
     "local:dynamo": "tsx scripts/local-dynamo.ts",
     "bundle": "tsx scripts/bundle.ts && tsx scripts/package-local.ts",
-    "inspect:package": "tsx scripts/inspect-package.ts .local/artifacts",
+    "inspect:package": "tsx scripts/inspect-package.ts",
     "config:local": "tsx scripts/config-local.ts"
   },
   "devDependencies": {

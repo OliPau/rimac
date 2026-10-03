@@ -9,7 +9,7 @@ export function parseJsonBody(event: APIGatewayProxyEventV2): ParsedBody {
   const contentType =
     Object.entries(event.headers).find(([name]) => name.toLowerCase() === 'content-type')?.[1] ??
     '';
-  const mediaType = contentType.replace(/;.*$/, '').trim().toLowerCase();
+  const mediaType = contentType.split(';', 1)[0]?.trim().toLowerCase();
   if (mediaType !== 'application/json') {
     return {
       success: false,

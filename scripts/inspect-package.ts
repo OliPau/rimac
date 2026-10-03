@@ -5,7 +5,7 @@ import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda
 import { unzipSync } from 'fflate';
 import { inspectPackages } from './packages.ts';
 
-const directory = process.argv[2] ?? '.local/artifacts';
+const directory = '.local/artifacts';
 await inspectPackages(directory);
 
 const archive = unzipSync(await readFile(join(directory, 'appointment.zip')));
