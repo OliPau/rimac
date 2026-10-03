@@ -1,7 +1,7 @@
 import { expect, test } from '@jest/globals';
 import { service } from '../../../infra/service.ts';
 
-test('connects the POST Lambda, appointment table and its execution role', () => {
+test('connects POST and GET to the appointment table and execution role', () => {
   const config = service();
 
   expect(config).toMatchObject({
@@ -18,7 +18,10 @@ test('connects the POST Lambda, appointment table and its execution role', () =>
         package: { artifact: '.local/artifacts/appointment.zip' },
         role: { 'Fn::GetAtt': ['AppointmentRole', 'Arn'] },
         environment: { APPOINTMENTS_TABLE: 'rimac-learning-learning-appointments' },
-        events: [{ httpApi: { method: 'POST', path: '/appointments' } }],
+        events: [
+          { httpApi: { method: 'POST', path: '/appointments' } },
+          { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
+        ],
       },
     },
     resources: {
@@ -44,7 +47,7 @@ test('connects the POST Lambda, appointment table and its execution role', () =>
                   Statement: [
                     { Action: ['logs:CreateLogStream', 'logs:PutLogEvents'] },
                     {
-                      Action: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+                      Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
                       Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
                     },
                   ],

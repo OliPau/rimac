@@ -72,5 +72,27 @@ for (const countryISO of ['PE', 'CL'] as const) {
   assert.equal(repeatedBody.createdAt, accepted.createdAt);
   assert.equal(repeatedBody.status, 'pending');
 
-  console.log(`${countryISO}: appointment ${accepted.appointmentId} persisted and repeated`);
+  const listed = await fetch(`${endpoint}/${input.insuredId}`, {
+    signal: AbortSignal.timeout(30000),
+  });
+  if (listed.status !== 200) {
+    throw new Error(`${countryISO}: GET returned ${listed.status}: ${await listed.text()}`);
+  }
+  const page = (await listed.json()) as {
+    items: { appointmentId: string; createdAt: string; status: string }[];
+  };
+  assert.ok(Array.isArray(page.items), `${countryISO}: GET did not return items`);
+  assert.ok(
+    page.items.some(
+      (item) =>
+        item.appointmentId === accepted.appointmentId &&
+        item.createdAt === accepted.createdAt &&
+        item.status === 'pending',
+    ),
+    `${countryISO}: GET did not return the created appointment`,
+  );
+
+  console.log(
+    `${countryISO}: appointment ${accepted.appointmentId} persisted, repeated and listed`,
+  );
 }

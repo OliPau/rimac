@@ -1,6 +1,7 @@
 import { expect, test, jest } from '@jest/globals';
 import type { APIGatewayProxyResultV2 } from 'aws-lambda';
 import { CreateAppointment } from '@application/appointments/use-cases/create';
+import { ListAppointments } from '@application/appointments/use-cases/list';
 import type { Acceptance } from '@application/appointments/dto/create.dto';
 
 import { httpHandler } from '@infrastructure/http/handler';
@@ -15,7 +16,7 @@ function structured(result: APIGatewayProxyResultV2) {
 
 test('returns the stored appointment and reflects its completed status on retry', async () => {
   const store = new MemoryAppointments();
-  const handle = httpHandler(new CreateAppointment(store), () => {});
+  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
   const event = http(
     'POST /appointments',
     JSON.stringify({ insuredId: '00123', scheduleId: 100, countryISO: 'PE' }),
@@ -43,7 +44,7 @@ test('returns the stored appointment and reflects its completed status on retry'
 
 test('rejects invalid HTTP bodies before invoking registration', async () => {
   const store = new MemoryAppointments();
-  const handle = httpHandler(new CreateAppointment(store), () => {});
+  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
 
   const execute = jest.spyOn(CreateAppointment.prototype, 'execute');
   try {
@@ -95,9 +96,10 @@ test('rejects invalid HTTP bodies before invoking registration', async () => {
 });
 
 test('explains invalid fields without invoking registration', async () => {
-  const create = new CreateAppointment(new MemoryAppointments());
+  const store = new MemoryAppointments();
+  const create = new CreateAppointment(store);
   const execute = jest.spyOn(create, 'execute');
-  const handle = httpHandler(create, () => {});
+  const handle = httpHandler(create, new ListAppointments(store), () => {});
   const result = structured(
     await handle(
       http(
@@ -118,4 +120,26 @@ test('explains invalid fields without invoking registration', async () => {
   });
   expect(execute).not.toHaveBeenCalled();
   execute.mockRestore();
+});
+
+test('lists only the insured appointments and rejects an invalid insured ID', async () => {
+  const store = new MemoryAppointments();
+  const own = await store.create({ insuredId: '00123', scheduleId: 100, countryISO: 'PE' });
+  await store.create({ insuredId: '00124', scheduleId: 101, countryISO: 'CL' });
+  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
+  const get = (insuredId: string) => ({
+    ...http('GET /appointments/{insuredId}'),
+    pathParameters: { insuredId },
+  });
+
+  const listed = structured(await handle(get('00123')));
+  expect(listed.statusCode).toBe(200);
+  expect(JSON.parse(String(listed.body)) as unknown).toMatchObject({
+    items: [{ insuredId: '00123', appointmentId: own.appointmentId }],
+  });
+  expect(await handle(get('99999'))).toMatchObject({ statusCode: 200, body: '{"items":[]}' });
+  expect(await handle(get('123'))).toMatchObject({
+    statusCode: 400,
+    body: expect.stringContaining('insuredId'),
+  });
 });

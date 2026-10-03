@@ -34,7 +34,7 @@ export function roles(): Resources {
                 },
                 {
                   Effect: 'Allow',
-                  Action: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+                  Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
                   Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
                 },
               ],

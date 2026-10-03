@@ -12,7 +12,10 @@ export function service() {
       timeout: 15,
       role: { 'Fn::GetAtt': ['AppointmentRole', 'Arn'] },
       environment: { APPOINTMENTS_TABLE: resource('appointments') },
-      events: [{ httpApi: { method: 'POST', path: '/appointments' } }],
+      events: [
+        { httpApi: { method: 'POST', path: '/appointments' } },
+        { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
+      ],
     },
   };
 
