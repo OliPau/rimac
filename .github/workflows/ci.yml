@@ -19,14 +19,29 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: docker compose up -d --wait
+      - run: pnpm local:dynamo
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm format
-      - run: pnpm test
-      - run: pnpm local:dynamo
-      - run: pnpm integration
+      - run: pnpm coverage
       - run: pnpm bundle
       - run: pnpm inspect:package
       - run: pnpm config:local
+      - name: Analyze code and enforce quality gate
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.qualitygate.wait=true
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
+      - name: Audit Sonar findings for this revision
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        run: pnpm exec tsx scripts/audit-sonar.ts
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
       - if: always()
         run: docker compose down
