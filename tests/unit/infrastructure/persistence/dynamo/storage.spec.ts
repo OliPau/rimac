@@ -1,6 +1,11 @@
 import { afterEach, expect, test } from '@jest/globals';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+} from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { identity } from '@domain/appointments/index';
 import { DynamoAppointments } from '@infrastructure/persistence/dynamo/repository';
@@ -69,4 +74,28 @@ test('reads the stored appointment after a conditional conflict and propagates s
   mock.on(GetCommand).resolves({});
   mock.on(PutCommand).rejects(new Error('Storage unavailable'));
   await expect(store.create(input)).rejects.toThrow('Storage unavailable');
+});
+
+test('follows DynamoDB continuation keys, including an empty intermediate page', async () => {
+  const key = { insuredId: input.insuredId, appointmentId: 'next' };
+  const saved = {
+    ...input,
+    appointmentId: identity(input).appointmentId,
+    status: 'pending',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  };
+  mock
+    .on(QueryCommand)
+    .resolvesOnce({ Items: [], LastEvaluatedKey: key })
+    .resolves({ Items: [saved] });
+
+  expect(await new DynamoAppointments(client, 'appointments').list(input.insuredId)).toEqual({
+    items: [saved],
+  });
+  expect(mock.commandCalls(QueryCommand)[0]?.args[0].input).toMatchObject({
+    KeyConditionExpression: 'insuredId = :insuredId',
+    ExpressionAttributeValues: { ':insuredId': input.insuredId },
+    ConsistentRead: true,
+  });
+  expect(mock.commandCalls(QueryCommand)[1]?.args[0].input.ExclusiveStartKey).toEqual(key);
 });

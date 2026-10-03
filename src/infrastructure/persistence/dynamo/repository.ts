@@ -1,4 +1,10 @@
-import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import {
+  DynamoDBDocumentClient,
+  GetCommand,
+  PutCommand,
+  QueryCommand,
+} from '@aws-sdk/lib-dynamodb';
+import type { QueryCommandInput } from '@aws-sdk/lib-dynamodb';
 import type { Appointment, Request } from '@domain/appointments/index';
 import { identity } from '@domain/appointments/index';
 import type { Acceptance } from '@application/appointments/dto/create.dto';
@@ -65,5 +71,24 @@ export class DynamoAppointments implements Appointments {
       storedAppointment.createdAt,
       storedAppointment.status,
     );
+  }
+
+  async list(insuredId: string): Promise<{ items: Appointment[] }> {
+    const items: Appointment[] = [];
+    let cursor: QueryCommandInput['ExclusiveStartKey'];
+    do {
+      const result = await this.client.send(
+        new QueryCommand({
+          TableName: this.table,
+          KeyConditionExpression: 'insuredId = :insuredId',
+          ExpressionAttributeValues: { ':insuredId': insuredId },
+          ConsistentRead: true,
+          ...(cursor ? { ExclusiveStartKey: cursor } : {}),
+        }),
+      );
+      items.push(...(result.Items ?? []).map((item) => appointment.parse(item)));
+      cursor = result.LastEvaluatedKey;
+    } while (cursor);
+    return { items };
   }
 }

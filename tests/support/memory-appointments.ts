@@ -15,4 +15,10 @@ export class MemoryAppointments implements Appointments {
     }
     return Promise.resolve(accept(item.appointmentId, item.createdAt, item.status));
   }
+
+  list(insuredId: string) {
+    return Promise.resolve({
+      items: [...this.items.values()].filter((item) => item.insuredId === insuredId),
+    });
+  }
 }

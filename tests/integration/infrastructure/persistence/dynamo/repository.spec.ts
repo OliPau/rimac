@@ -23,7 +23,8 @@ test('keeps one stored appointment through concurrent retries and completion', a
     scheduleId: Date.now(),
     countryISO: 'PE' as const,
   };
-  const create = new CreateAppointment(new DynamoAppointments(client, table));
+  const store = new DynamoAppointments(client, table);
+  const create = new CreateAppointment(store);
   const results = await Promise.all(Array.from({ length: 5 }, () => create.execute(input)));
   const first = results[0];
   if (!first) {
@@ -57,4 +58,13 @@ test('keeps one stored appointment through concurrent retries and completion', a
     status: 'completed',
     message: 'El agendamiento ya fue confirmado.',
   });
+
+  const otherInsuredId = String((Number(input.insuredId) + 1) % 100_000).padStart(5, '0');
+  await create.execute({ ...input, insuredId: otherInsuredId });
+  expect(await store.list(input.insuredId)).toMatchObject({
+    items: [
+      { insuredId: input.insuredId, appointmentId: first.appointmentId, status: 'completed' },
+    ],
+  });
+  expect(await store.list('not-stored')).toEqual({ items: [] });
 });
