@@ -1,7 +1,8 @@
+import { PutEventsCommand, type EventBridgeClient } from '@aws-sdk/client-eventbridge';
 import { PublishCommand, type SNSClient } from '@aws-sdk/client-sns';
-import type { Publisher } from '@application/appointments/ports/messaging';
-import type { Event } from '@domain/appointments/index';
-import { event as eventSchema } from './dto/event.dto.ts';
+import type { ConfirmationPublisher, Publisher } from '@application/appointments/ports/messaging';
+import type { CompletionEvent, Event } from '@domain/appointments/index';
+import { completion as completionSchema, event as eventSchema } from './dto/event.dto.ts';
 
 export class SnsPublisher implements Publisher {
   constructor(
@@ -20,5 +21,34 @@ export class SnsPublisher implements Publisher {
         },
       }),
     );
+  }
+}
+
+export class CompletionPublisher implements ConfirmationPublisher {
+  constructor(
+    private readonly client: EventBridgeClient,
+    private readonly bus: string,
+  ) {}
+
+  async publish(event: CompletionEvent): Promise<void> {
+    const message = completionSchema.parse(event);
+    const result = await this.client.send(
+      new PutEventsCommand({
+        Entries: [
+          {
+            EventBusName: this.bus,
+            Source: 'rimac.appointments',
+            DetailType: message.type,
+            Detail: JSON.stringify(message),
+          },
+        ],
+      }),
+    );
+    if (result.FailedEntryCount || result.Entries?.some((entry) => entry.ErrorCode)) {
+      throw new Error('EventBridge rejected confirmation');
+    }
+    if (!result.Entries?.[0]?.EventId) {
+      throw new Error('Missing EventBridge receipt');
+    }
   }
 }

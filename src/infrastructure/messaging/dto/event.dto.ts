@@ -9,3 +9,7 @@ export const event = request.extend({
   correlationId: z.uuid(),
   occurredAt: z.iso.datetime(),
 });
+
+export const completion = event.omit({ type: true }).extend({
+  type: z.literal('appointment.completed'),
+});

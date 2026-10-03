@@ -20,3 +20,5 @@ export interface Event extends Request {
   correlationId: string;
   occurredAt: string;
 }
+
+export type CompletionEvent = Omit<Event, 'type'> & { type: 'appointment.completed' };
