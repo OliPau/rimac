@@ -6,6 +6,7 @@ settings:
 
 overrides:
   ajv@6.15.0>uri-js: npm:fast-uri@3.1.8
+  jest-config@30.5.2>deepmerge: 4.1.2
 
 importers:
 
@@ -1241,8 +1242,8 @@ packages:
   deep-is@0.1.4:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
 
-  deepmerge@4.3.1:
-    resolution: {integrity: sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==}
+  deepmerge@4.1.2:
+    resolution: {integrity: sha512-9ZXh/8Fp+ggcscoRg324S1aNdGSCl2X1P8F1FPTHbtq3RAxy9ECbU2Wgy2J12r6x/O0BStDlkzcpKK/HptX+Kg==}
     engines: {node: '>=0.10.0'}
 
   detect-libc@2.1.2:
@@ -3437,7 +3438,7 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepmerge@4.3.1: {}
+  deepmerge@4.1.2: {}
 
   detect-libc@2.1.2: {}
 
@@ -3812,7 +3813,7 @@ snapshots:
       babel-jest: 30.5.2(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1)
       chalk: 4.1.2
       ci-info: 4.4.0
-      deepmerge: 4.3.1
+      deepmerge: 4.1.2
       glob: 13.0.6
       graceful-fs: 4.2.11
       jest-circus: 30.5.2(supports-color@8.1.1)

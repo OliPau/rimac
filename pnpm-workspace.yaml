@@ -6,3 +6,4 @@ allowBuilds:
   serverless: true
 overrides:
   ajv@6.15.0>uri-js: npm:fast-uri@3.1.8
+  jest-config@30.5.2>deepmerge: 4.1.2
