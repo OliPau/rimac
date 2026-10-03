@@ -11,3 +11,12 @@ export interface Appointment extends Request {
   status: AppointmentStatus;
   createdAt: string;
 }
+
+export interface Event extends Request {
+  version: 1;
+  type: 'appointment.requested';
+  eventId: string;
+  appointmentId: string;
+  correlationId: string;
+  occurredAt: string;
+}
