@@ -17,6 +17,7 @@ const extractedPath = '.local/inspection/appointment.cjs';
 await mkdir(dirname(extractedPath), { recursive: true });
 await writeFile(extractedPath, bundledHandler);
 process.env.APPOINTMENTS_TABLE ??= 'package-inspection';
+process.env.TOPIC_ARN ??= 'arn:aws:sns:us-east-1:123456789012:package-inspection';
 const load = createRequire(import.meta.url);
 const module = load(resolve(extractedPath)) as {
   handler?: (event: APIGatewayProxyEventV2) => Promise<APIGatewayProxyResultV2>;

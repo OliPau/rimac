@@ -1,4 +1,4 @@
-import { prefix, swaggerSecret } from './config.ts';
+import { prefix, project, swaggerSecret } from './config.ts';
 import type { Resource, Resources } from './types.ts';
 
 function lambdaRole(name: string, permissions: Record<string, unknown>[]): Resource {
@@ -47,6 +47,17 @@ export function roles(): Resources {
         Effect: 'Allow',
         Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
         Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
+      },
+      {
+        Effect: 'Allow',
+        Action: ['sns:Publish'],
+        Resource: { Ref: 'Topic' },
+      },
+      {
+        Effect: 'Allow',
+        Action: ['kms:GenerateDataKey', 'kms:Decrypt'],
+        Resource: '*',
+        Condition: { StringEquals: { 'kms:ViaService': `sns.${project.region}.amazonaws.com` } },
       },
     ]),
     SwaggerRole: lambdaRole('swagger', [

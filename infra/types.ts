@@ -5,6 +5,7 @@ export type Functions = NonNullable<AWS['functions']>;
 export interface Resource {
   Type: string;
   Properties: Record<string, unknown>;
+  DependsOn?: string[];
 }
 
 export type Resources = Record<string, Resource>;

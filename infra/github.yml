@@ -168,10 +168,14 @@ Resources:
                   - lambda:*
                   - logs:*
                   - dynamodb:*
+                  - sns:*
+                  - sqs:*
                 Resource:
                   - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${Stage}-*
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Stage}-*
+                  - !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Stage}*
+                  - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Stage}-*
               - Effect: Allow
                 Action: apigateway:*
                 Resource:

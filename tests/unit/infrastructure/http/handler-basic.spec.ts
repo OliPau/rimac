@@ -7,6 +7,7 @@ import type { Acceptance } from '@application/appointments/dto/create.dto';
 import { httpHandler } from '@infrastructure/http/handler';
 import { MemoryAppointments } from '../../../support/memory-appointments.ts';
 import { http } from '../../../support/fixtures.ts';
+const publisher = { publish: () => Promise.resolve() };
 function structured(result: APIGatewayProxyResultV2) {
   if (typeof result === 'string') {
     throw new Error('Expected a structured HTTP response');
@@ -16,7 +17,11 @@ function structured(result: APIGatewayProxyResultV2) {
 
 test('returns the stored appointment and reflects its completed status on retry', async () => {
   const store = new MemoryAppointments();
-  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
+  const handle = httpHandler(
+    new CreateAppointment(store, publisher),
+    new ListAppointments(store),
+    () => {},
+  );
   const event = http(
     'POST /appointments',
     JSON.stringify({ insuredId: '00123', scheduleId: 100, countryISO: 'PE' }),
@@ -44,7 +49,11 @@ test('returns the stored appointment and reflects its completed status on retry'
 
 test('rejects invalid HTTP bodies before invoking registration', async () => {
   const store = new MemoryAppointments();
-  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
+  const handle = httpHandler(
+    new CreateAppointment(store, publisher),
+    new ListAppointments(store),
+    () => {},
+  );
 
   const execute = jest.spyOn(CreateAppointment.prototype, 'execute');
   try {
@@ -97,7 +106,7 @@ test('rejects invalid HTTP bodies before invoking registration', async () => {
 
 test('explains invalid fields without invoking registration', async () => {
   const store = new MemoryAppointments();
-  const create = new CreateAppointment(store);
+  const create = new CreateAppointment(store, publisher);
   const execute = jest.spyOn(create, 'execute');
   const handle = httpHandler(create, new ListAppointments(store), () => {});
   const result = structured(
@@ -126,7 +135,11 @@ test('lists only the insured appointments and rejects an invalid insured ID', as
   const store = new MemoryAppointments();
   const own = await store.create({ insuredId: '00123', scheduleId: 100, countryISO: 'PE' });
   await store.create({ insuredId: '00124', scheduleId: 101, countryISO: 'CL' });
-  const handle = httpHandler(new CreateAppointment(store), new ListAppointments(store), () => {});
+  const handle = httpHandler(
+    new CreateAppointment(store, publisher),
+    new ListAppointments(store),
+    () => {},
+  );
   const get = (insuredId: string) => ({
     ...http('GET /appointments/{insuredId}'),
     pathParameters: { insuredId },

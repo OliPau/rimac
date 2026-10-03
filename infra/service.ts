@@ -1,5 +1,6 @@
 import type { AWS } from '@serverless/typescript';
 import { prefix, project, resource, swaggerSecret } from './config.ts';
+import { messaging } from './messaging.ts';
 import { roles } from './roles.ts';
 import { tables } from './tables.ts';
 import type { Functions } from './types.ts';
@@ -11,7 +12,7 @@ export function service() {
       package: { artifact: '.local/artifacts/appointment.zip' },
       timeout: 15,
       role: { 'Fn::GetAtt': ['AppointmentRole', 'Arn'] },
-      environment: { APPOINTMENTS_TABLE: resource('appointments') },
+      environment: { APPOINTMENTS_TABLE: resource('appointments'), TOPIC_ARN: { Ref: 'Topic' } },
       events: [
         { httpApi: { method: 'POST', path: '/appointments' } },
         { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
@@ -48,6 +49,6 @@ export function service() {
     build: { esbuild: false },
     package: { individually: true },
     functions,
-    resources: { Resources: { ...tables(), ...roles() } },
+    resources: { Resources: { ...tables(), ...roles(), ...messaging() } },
   } satisfies AWS;
 }

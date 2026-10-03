@@ -24,7 +24,7 @@ test('keeps one stored appointment through concurrent retries and completion', a
     countryISO: 'PE' as const,
   };
   const store = new DynamoAppointments(client, table);
-  const create = new CreateAppointment(store);
+  const create = new CreateAppointment(store, { publish: () => Promise.resolve() });
   const results = await Promise.all(Array.from({ length: 5 }, () => create.execute(input)));
   const first = results[0];
   if (!first) {

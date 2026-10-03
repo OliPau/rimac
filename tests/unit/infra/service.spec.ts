@@ -50,6 +50,13 @@ test('connects POST and GET to the appointment table and execution role', () => 
                       Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
                       Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
                     },
+                    { Action: ['sns:Publish'], Resource: { Ref: 'Topic' } },
+                    {
+                      Action: ['kms:GenerateDataKey', 'kms:Decrypt'],
+                      Condition: {
+                        StringEquals: { 'kms:ViaService': 'sns.us-east-1.amazonaws.com' },
+                      },
+                    },
                   ],
                 },
               },
@@ -97,4 +104,49 @@ test('exposes Swagger through its own Lambda and secret-scoped role', () => {
       },
     },
   });
+});
+
+test('routes each country to its own queue with a delivery dead letter queue', () => {
+  const config = service();
+  const resources: Record<string, unknown> = config.resources.Resources;
+  expect(config.functions?.appointment).toMatchObject({
+    environment: { TOPIC_ARN: { Ref: 'Topic' } },
+  });
+  expect(resources.Topic).toMatchObject({
+    Type: 'AWS::SNS::Topic',
+    Properties: { TopicName: 'rimac-learning-learning', KmsMasterKeyId: 'alias/aws/sns' },
+  });
+  for (const country of ['PE', 'CL']) {
+    expect(resources[`Queue${country}`]).toMatchObject({
+      Type: 'AWS::SQS::Queue',
+      Properties: {
+        SqsManagedSseEnabled: true,
+        MessageRetentionPeriod: 1209600,
+      },
+    });
+    expect(resources[`DeliveryDLQ${country}`]).toMatchObject({
+      Type: 'AWS::SQS::Queue',
+      Properties: { MessageRetentionPeriod: 1209600 },
+    });
+    expect(resources[`Policy${country}`]).toMatchObject({
+      Type: 'AWS::SQS::QueuePolicy',
+      Properties: {
+        PolicyDocument: {
+          Statement: [{ Condition: { ArnEquals: { 'aws:SourceArn': { Ref: 'Topic' } } } }],
+        },
+      },
+    });
+    expect(resources[`Subscription${country}`]).toMatchObject({
+      Type: 'AWS::SNS::Subscription',
+      DependsOn: [`Policy${country}`, `DeliveryPolicy${country}`],
+      Properties: {
+        Endpoint: { 'Fn::GetAtt': [`Queue${country}`, 'Arn'] },
+        RawMessageDelivery: true,
+        FilterPolicy: { countryISO: [country] },
+        RedrivePolicy: {
+          deadLetterTargetArn: { 'Fn::GetAtt': [`DeliveryDLQ${country}`, 'Arn'] },
+        },
+      },
+    });
+  }
 });
