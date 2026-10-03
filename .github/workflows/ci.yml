@@ -25,5 +25,7 @@ jobs:
       - run: pnpm test
       - run: pnpm local:dynamo
       - run: pnpm integration
+      - run: pnpm bundle
+      - run: pnpm inspect:package
       - if: always()
         run: docker compose down

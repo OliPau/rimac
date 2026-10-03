@@ -15,14 +15,18 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "coverage": "tsx scripts/test.ts coverage",
     "integration": "tsx scripts/test.ts integration",
-    "local:dynamo": "tsx scripts/local-dynamo.ts"
+    "local:dynamo": "tsx scripts/local-dynamo.ts",
+    "bundle": "tsx scripts/bundle.ts && tsx scripts/package-local.ts",
+    "inspect:package": "tsx scripts/inspect-package.ts .local/artifacts"
   },
   "devDependencies": {
     "@jest/globals": "30.5.2",
     "@types/aws-lambda": "8.10.164",
     "@types/node": "24.19.0",
     "aws-sdk-client-mock": "4.1.0",
+    "esbuild": "0.28.2",
     "eslint": "10.11.0",
+    "fflate": "0.8.3",
     "jest": "30.5.2",
     "jiti": "2.7.0",
     "prettier": "3.9.9",
@@ -32,6 +36,7 @@
     "typescript-eslint": "8.71.0"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "2.35.0",
     "@aws-sdk/client-dynamodb": "3.1144.0",
     "@aws-sdk/lib-dynamodb": "3.1144.0",
     "zod": "4.6.5"
