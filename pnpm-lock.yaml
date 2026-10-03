@@ -25,6 +25,9 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
+      '@aws-sdk/client-cloudformation':
+        specifier: 3.1144.0
+        version: 3.1144.0
       '@jest/globals':
         specifier: 30.5.2
         version: 30.5.2(supports-color@8.1.1)
@@ -89,6 +92,10 @@ packages:
         optional: true
       '@middy/core':
         optional: true
+
+  '@aws-sdk/client-cloudformation@3.1144.0':
+    resolution: {integrity: sha512-36Z45LaZPqhxJLi85XspP9by4iNr3MeW0KFgjhpsq8ypY66Rr8+gbi0AZo+t5z77AYieZxY/guNc7BUeWOqtCw==}
+    engines: {node: '>=20.0.0'}
 
   '@aws-sdk/client-dynamodb@3.1144.0':
     resolution: {integrity: sha512-WkiUF2WksJJsul4SLd2nqrDThIlYfjgHjRspiip7Xqkd7Xvw0vlX4fR76QZmxFx6eHM5ylukRDume+wI/dadPA==}
@@ -2154,6 +2161,17 @@ snapshots:
     dependencies:
       '@aws-lambda-powertools/commons': 2.35.0
       '@aws/lambda-invoke-store': 0.3.0
+
+  '@aws-sdk/client-cloudformation@3.1144.0':
+    dependencies:
+      '@aws-sdk/core': 3.978.1
+      '@aws-sdk/credential-provider-node': 3.972.84
+      '@aws-sdk/types': 3.974.6
+      '@smithy/core': 3.35.1
+      '@smithy/fetch-http-handler': 5.8.0
+      '@smithy/node-http-handler': 4.12.1
+      '@smithy/types': 4.19.0
+      tslib: 2.8.1
 
   '@aws-sdk/client-dynamodb@3.1144.0':
     dependencies:

@@ -1,25 +1,14 @@
-import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
+import { CloudFormationClient, DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { project } from '../infra/config.ts';
 
 const stack = `${project.service}-${project.stage}`;
-const output = execFileSync(
-  'aws',
-  [
-    'cloudformation',
-    'describe-stacks',
-    '--stack-name',
-    stack,
-    '--region',
-    project.region,
-    '--query',
-    "Stacks[0].Outputs[?OutputKey=='HttpApiUrl'].OutputValue | [0]",
-    '--output',
-    'text',
-  ],
-  { encoding: 'utf8' },
-).trim();
+const client = new CloudFormationClient({ region: project.region });
+const { Stacks } = await client.send(new DescribeStacksCommand({ StackName: stack }));
+const output = Stacks?.[0]?.Outputs?.find(
+  ({ OutputKey }) => OutputKey === 'HttpApiUrl',
+)?.OutputValue;
 
-assert.ok(output && output !== 'None', `HttpApiUrl is missing from ${stack}`);
+assert.ok(output, `HttpApiUrl is missing from ${stack}`);
 assert.equal(new URL(output).protocol, 'https:', 'HttpApiUrl must use HTTPS');
 console.log(output);
