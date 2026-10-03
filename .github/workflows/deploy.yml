@@ -52,3 +52,12 @@ jobs:
         run: pnpm deploy
         env:
           SERVERLESS_ACCESS_KEY: ${{ secrets.SERVERLESS_ACCESS_KEY }}
+      - name: Read deployed API URL
+        if: inputs.mode == 'deploy'
+        id: api
+        run: echo "url=$(pnpm exec tsx scripts/api-url.ts)" >> "$GITHUB_OUTPUT"
+      - name: Verify the deployed POST
+        if: inputs.mode == 'deploy'
+        run: pnpm smoke
+        env:
+          API_URL: ${{ steps.api.outputs.url }}
