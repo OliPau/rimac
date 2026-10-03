@@ -27,6 +27,9 @@ importers:
       '@jest/globals':
         specifier: 30.5.2
         version: 30.5.2(supports-color@8.1.1)
+      '@serverless/typescript':
+        specifier: 4.30.0
+        version: 4.30.0
       '@types/aws-lambda':
         specifier: 8.10.164
         version: 8.10.164
@@ -54,6 +57,9 @@ importers:
       prettier:
         specifier: 3.9.9
         version: 3.9.9
+      serverless:
+        specifier: 4.43.0
+        version: 4.43.0
       ts-jest:
         specifier: 29.4.14
         version: 29.4.14(@babel/core@7.29.7(supports-color@8.1.1))(@jest/transform@30.5.2(supports-color@8.1.1))(@jest/types@30.5.1)(babel-jest@30.5.2(@babel/core@7.29.7(supports-color@8.1.1))(supports-color@8.1.1))(esbuild@0.28.2)(jest-util@30.5.1)(jest@30.5.2(@types/node@24.19.0)(supports-color@8.1.1))(typescript@6.0.3)
@@ -772,6 +778,9 @@ packages:
   '@pkgr/core@0.3.6':
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
+
+  '@serverless/typescript@4.30.0':
+    resolution: {integrity: sha512-4uunJ/hqbQ0ypOCqmjhxlZlSdD5Xe2+yAmpFsbyHYkQWjOu0ot2vLoRSM8YIa5VA72MDrhM7y04Z3o48JMS+9g==}
 
   '@sinclair/typebox@0.34.52':
     resolution: {integrity: sha512-XiMQh7qqVlxZzcVD+kkGMNGMzcTrDMLWI7S4x7z1MkCkbDPrekpZXEUK0eZqZFMuHQg2a2DZOcDIh9o5v3Gonw==}
@@ -1900,6 +1909,11 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  serverless@4.43.0:
+    resolution: {integrity: sha512-ukk3LARQ89Cn2phMyIrwabfy3rx3IoENWKvDY3Cyj4tGJOMv9XAkxgnx8n71jDaG+ijOxBXyPBL72jTkPPju0w==}
+    engines: {node: '>=18.17.0'}
+    hasBin: true
+
   shebang-command@2.0.0:
     resolution: {integrity: sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==}
     engines: {node: '>=8'}
@@ -2065,6 +2079,10 @@ packages:
 
   undici-types@7.24.6:
     resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
+
+  undici@6.28.1:
+    resolution: {integrity: sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==}
+    engines: {node: '>=18.17'}
 
   unrs-resolver@1.12.2:
     resolution: {integrity: sha512-dmlRxBJJayXjqTwC+JtF1HhJmgf3ftQ3YejFcZrf4+KKtJv0qDsK1pjqaaVjG7wJ5NJ6UVP1OqRMQ71Z4C3rxQ==}
@@ -2950,6 +2968,8 @@ snapshots:
     optional: true
 
   '@pkgr/core@0.3.6': {}
+
+  '@serverless/typescript@4.30.0': {}
 
   '@sinclair/typebox@0.34.52': {}
 
@@ -4247,6 +4267,10 @@ snapshots:
 
   semver@7.8.5: {}
 
+  serverless@4.43.0:
+    dependencies:
+      undici: 6.28.1
+
   shebang-command@2.0.0:
     dependencies:
       shebang-regex: 3.0.0
@@ -4392,6 +4416,8 @@ snapshots:
     optional: true
 
   undici-types@7.24.6: {}
+
+  undici@6.28.1: {}
 
   unrs-resolver@1.12.2:
     dependencies:

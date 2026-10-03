@@ -27,5 +27,6 @@ jobs:
       - run: pnpm integration
       - run: pnpm bundle
       - run: pnpm inspect:package
+      - run: pnpm config:local
       - if: always()
         run: docker compose down

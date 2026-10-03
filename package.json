@@ -17,10 +17,12 @@
     "integration": "tsx scripts/test.ts integration",
     "local:dynamo": "tsx scripts/local-dynamo.ts",
     "bundle": "tsx scripts/bundle.ts && tsx scripts/package-local.ts",
-    "inspect:package": "tsx scripts/inspect-package.ts .local/artifacts"
+    "inspect:package": "tsx scripts/inspect-package.ts .local/artifacts",
+    "config:local": "tsx scripts/config-local.ts"
   },
   "devDependencies": {
     "@jest/globals": "30.5.2",
+    "@serverless/typescript": "4.30.0",
     "@types/aws-lambda": "8.10.164",
     "@types/node": "24.19.0",
     "aws-sdk-client-mock": "4.1.0",
@@ -30,6 +32,7 @@
     "jest": "30.5.2",
     "jiti": "2.7.0",
     "prettier": "3.9.9",
+    "serverless": "4.43.0",
     "ts-jest": "29.4.14",
     "tsx": "4.23.15",
     "typescript": "6.0.3",
