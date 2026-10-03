@@ -26,7 +26,10 @@
     "tsx": "4.23.15",
     "jest": "30.5.2",
     "@jest/globals": "30.5.2",
-    "ts-jest": "29.4.14"
+    "ts-jest": "29.4.14",
+    "@types/aws-lambda": "8.10.164"
   },
-  "dependencies": {}
+  "dependencies": {
+    "zod": "4.6.5"
+  }
 }
