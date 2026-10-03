@@ -1,0 +1,32 @@
+{
+  "name": "rimac-learning",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.21.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "test": "tsx scripts/test.ts unit",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "coverage": "tsx scripts/test.ts coverage",
+    "integration": "tsx scripts/test.ts integration"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "@types/node": "24.19.0",
+    "eslint": "10.11.0",
+    "typescript-eslint": "8.71.0",
+    "jiti": "2.7.0",
+    "prettier": "3.9.9",
+    "tsx": "4.23.15",
+    "jest": "30.5.2",
+    "@jest/globals": "30.5.2",
+    "ts-jest": "29.4.14"
+  },
+  "dependencies": {}
+}

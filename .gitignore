@@ -1,0 +1,10 @@
+node_modules/
+.local/
+delivery/
+coverage/
+.serverless/
+.env*
+!.env.example
+serverless.generated.json
+
+*.md
