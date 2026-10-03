@@ -1,4 +1,39 @@
-import type { APIGatewayProxyEventV2 } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, SQSEvent } from 'aws-lambda';
+import type { Event } from '@domain/appointments/index';
+
+export const event: Event = {
+  version: 1,
+  type: 'appointment.requested',
+  insuredId: '00123',
+  scheduleId: 123,
+  countryISO: 'PE',
+  appointmentId: '10000000-0000-4000-8000-000000000001',
+  eventId: '10000000-0000-4000-8000-000000000002',
+  correlationId: '10000000-0000-4000-8000-000000000003',
+  occurredAt: '2026-10-03T12:00:00.000Z',
+};
+
+export function sqs(...bodies: unknown[]): SQSEvent {
+  return {
+    Records: bodies.map((body, index) => ({
+      messageId: `message-${index}`,
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+      receiptHandle: 'receipt',
+      attributes: {
+        ApproximateReceiveCount: '1',
+        SentTimestamp: '0',
+        SenderId: 'sender',
+        ApproximateFirstReceiveTimestamp: '0',
+      },
+      messageAttributes: {},
+      md5OfBody: '',
+      eventSource: 'aws:sqs',
+      eventSourceARN: 'queue',
+      awsRegion: 'us-east-1',
+    })),
+  };
+}
+
 export function http(routeKey: string, body?: string): APIGatewayProxyEventV2 {
   return {
     version: '2.0',
