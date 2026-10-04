@@ -1,4 +1,4 @@
-import { prefix, project, swaggerSecret } from './config.ts';
+import { mysqlSecrets, prefix, project, swaggerSecret } from './config.ts';
 import type { Resource, Resources } from './types.ts';
 
 function lambdaRole(name: string, permissions: Record<string, unknown>[]): Resource {
@@ -41,7 +41,7 @@ function lambdaRole(name: string, permissions: Record<string, unknown>[]): Resou
 }
 
 export function roles(): Resources {
-  return {
+  const resources: Resources = {
     AppointmentRole: lambdaRole('appointment', [
       {
         Effect: 'Allow',
@@ -73,4 +73,26 @@ export function roles(): Resources {
       },
     ]),
   };
+
+  for (const country of ['PE', 'CL'] as const) {
+    resources[`WorkerRole${country}`] = lambdaRole(`worker-${country.toLowerCase()}`, [
+      {
+        Effect: 'Allow',
+        Action: ['sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes'],
+        Resource: { 'Fn::GetAtt': [`Queue${country}`, 'Arn'] },
+      },
+      {
+        Effect: 'Allow',
+        Action: ['secretsmanager:GetSecretValue'],
+        Resource: mysqlSecrets[country],
+      },
+      {
+        Effect: 'Allow',
+        Action: ['events:PutEvents'],
+        Resource: { 'Fn::GetAtt': ['Bus', 'Arn'] },
+      },
+    ]);
+  }
+
+  return resources;
 }

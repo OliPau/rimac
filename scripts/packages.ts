@@ -4,7 +4,11 @@ import { transformSync } from 'esbuild';
 import { unzipSync, zipSync } from 'fflate';
 import { swaggerAssets } from '@infrastructure/http/swagger/assets';
 
-const entries: Record<string, string> = { appointment: 'appointment', swagger: 'swagger' };
+const entries: Record<string, string> = {
+  appointment: 'appointment',
+  swagger: 'swagger',
+  worker: 'worker',
+};
 const maximumEntryBytes = 10 * 1024 * 1024;
 
 function packagePaths(name: string, entry: string): string[] {

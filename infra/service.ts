@@ -1,5 +1,5 @@
 import type { AWS } from '@serverless/typescript';
-import { prefix, project, resource, swaggerSecret } from './config.ts';
+import { mysqlSecrets, prefix, project, resource, swaggerSecret } from './config.ts';
 import { messaging } from './messaging.ts';
 import { roles } from './roles.ts';
 import { tables } from './tables.ts';
@@ -37,6 +37,32 @@ export function service() {
       ],
     },
   };
+
+  for (const country of ['PE', 'CL'] as const) {
+    functions[`worker${country}`] = {
+      name: resource(`worker-${country.toLowerCase()}`),
+      handler: 'src/handlers/worker.handler',
+      package: { artifact: '.local/artifacts/worker.zip' },
+      timeout: 30,
+      reservedConcurrency: 2,
+      role: { 'Fn::GetAtt': [`WorkerRole${country}`, 'Arn'] },
+      environment: {
+        COUNTRY: country,
+        SQL_SECRET_ARN: mysqlSecrets[country],
+        EVENT_BUS: { Ref: 'Bus' },
+      },
+      events: [
+        {
+          sqs: {
+            arn: { 'Fn::GetAtt': [`Queue${country}`, 'Arn'] },
+            batchSize: 5,
+            maximumConcurrency: 2,
+            functionResponseType: 'ReportBatchItemFailures',
+          },
+        },
+      ],
+    };
+  }
 
   return {
     service: project.service,

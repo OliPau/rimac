@@ -38,27 +38,37 @@ for (const countryISO of ['PE', 'CL'] as const) {
   assert.ok(accepted.createdAt, `${countryISO}: createdAt is missing`);
   assert.equal(accepted.status, 'pending');
 
-  const stored = await dynamo.send(
-    new GetCommand({
-      TableName: resource('appointments'),
-      Key: { insuredId: input.insuredId, appointmentId: accepted.appointmentId },
-      ConsistentRead: true,
-    }),
-  );
-  const storedAppointment = appointment.parse(stored.Item);
+  const readStored = async () => {
+    const stored = await dynamo.send(
+      new GetCommand({
+        TableName: resource('appointments'),
+        Key: { insuredId: input.insuredId, appointmentId: accepted.appointmentId },
+        ConsistentRead: true,
+      }),
+    );
+    return appointment.parse(stored.Item);
+  };
+  const storedAppointment = await readStored();
   assert.deepEqual(
     {
       insuredId: storedAppointment.insuredId,
       scheduleId: storedAppointment.scheduleId,
       countryISO: storedAppointment.countryISO,
-      status: storedAppointment.status,
       createdAt: storedAppointment.createdAt,
     },
-    { ...input, status: 'pending', createdAt: accepted.createdAt },
+    { ...input, createdAt: accepted.createdAt },
   );
 
+  const deadline = Date.now() + 90_000;
+  let completed = storedAppointment;
+  while (completed.status !== 'completed' && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    completed = await readStored();
+  }
+  assert.equal(completed.status, 'completed', `${countryISO}: confirmation was not processed`);
+
   const repeated = await send();
-  if (repeated.status !== 202) {
+  if (repeated.status !== 200) {
     throw new Error(
       `${countryISO}: repeated POST returned ${repeated.status}: ${await repeated.text()}`,
     );
@@ -70,7 +80,7 @@ for (const countryISO of ['PE', 'CL'] as const) {
   };
   assert.equal(repeatedBody.appointmentId, accepted.appointmentId);
   assert.equal(repeatedBody.createdAt, accepted.createdAt);
-  assert.equal(repeatedBody.status, 'pending');
+  assert.equal(repeatedBody.status, 'completed');
 
   const listed = await fetch(`${endpoint}/${input.insuredId}`, {
     signal: AbortSignal.timeout(30000),
@@ -87,12 +97,10 @@ for (const countryISO of ['PE', 'CL'] as const) {
       (item) =>
         item.appointmentId === accepted.appointmentId &&
         item.createdAt === accepted.createdAt &&
-        item.status === 'pending',
+        item.status === 'completed',
     ),
     `${countryISO}: GET did not return the created appointment`,
   );
 
-  console.log(
-    `${countryISO}: appointment ${accepted.appointmentId} persisted, repeated and listed`,
-  );
+  console.log(`${countryISO}: appointment ${accepted.appointmentId} completed and listed`);
 }

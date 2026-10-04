@@ -211,3 +211,60 @@ test('routes completed events to a retryable queue with delivery and processing 
     });
   }
 });
+
+test('runs each country worker with its own queue, secret and processing DLQ', () => {
+  const config = service();
+  const resources: Record<string, unknown> = config.resources.Resources;
+  for (const country of ['PE', 'CL'] as const) {
+    expect(config.functions?.[`worker${country}`]).toMatchObject({
+      name: `rimac-learning-learning-worker-${country.toLowerCase()}`,
+      package: { artifact: '.local/artifacts/worker.zip' },
+      reservedConcurrency: 2,
+      role: { 'Fn::GetAtt': [`WorkerRole${country}`, 'Arn'] },
+      environment: {
+        COUNTRY: country,
+        SQL_SECRET_ARN: `\${env:SQL_SECRET_${country}_ARN}`,
+        EVENT_BUS: { Ref: 'Bus' },
+      },
+      events: [
+        {
+          sqs: {
+            arn: { 'Fn::GetAtt': [`Queue${country}`, 'Arn'] },
+            maximumConcurrency: 2,
+            functionResponseType: 'ReportBatchItemFailures',
+          },
+        },
+      ],
+    });
+    expect(resources[`Queue${country}`]).toMatchObject({
+      Properties: {
+        RedrivePolicy: {
+          deadLetterTargetArn: { 'Fn::GetAtt': [`WorkerDLQ${country}`, 'Arn'] },
+          maxReceiveCount: 5,
+        },
+      },
+    });
+    expect(resources[`WorkerRole${country}`]).toMatchObject({
+      Properties: {
+        Policies: [
+          {
+            PolicyDocument: {
+              Statement: [
+                { Action: ['logs:CreateLogStream', 'logs:PutLogEvents'] },
+                {
+                  Action: ['sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes'],
+                  Resource: { 'Fn::GetAtt': [`Queue${country}`, 'Arn'] },
+                },
+                {
+                  Action: ['secretsmanager:GetSecretValue'],
+                  Resource: `\${env:SQL_SECRET_${country}_ARN}`,
+                },
+                { Action: ['events:PutEvents'], Resource: { 'Fn::GetAtt': ['Bus', 'Arn'] } },
+              ],
+            },
+          },
+        ],
+      },
+    });
+  }
+});

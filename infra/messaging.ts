@@ -93,7 +93,8 @@ export function messaging(): Resources {
 
   for (const country of ['PE', 'CL'] as const) {
     resources[`DeliveryDLQ${country}`] = queue(`${country}-delivery-dlq`);
-    resources[`Queue${country}`] = queue(`SQS_${country}`);
+    resources[`WorkerDLQ${country}`] = queue(`${country}-processing-dlq`);
+    resources[`Queue${country}`] = queue(`SQS_${country}`, 360, `WorkerDLQ${country}`);
     resources[`Policy${country}`] = deliveryPolicy(`Queue${country}`);
     resources[`DeliveryPolicy${country}`] = deliveryPolicy(`DeliveryDLQ${country}`);
     resources[`Subscription${country}`] = {

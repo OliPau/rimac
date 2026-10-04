@@ -84,3 +84,20 @@ if (
   throw new Error('Swagger stylesheet requires an external file');
 }
 console.log('Packaged Swagger contains the page and its local assets');
+
+const workerArchive = unzipSync(await readFile(join(directory, 'worker.zip')));
+const bundledWorker = workerArchive['src/handlers/worker.cjs'];
+if (!bundledWorker) {
+  throw new Error('Worker handler is missing from the ZIP');
+}
+const workerPath = '.local/inspection/worker.cjs';
+await writeFile(workerPath, bundledWorker);
+process.env.COUNTRY ??= 'PE';
+process.env.SQL_SECRET_ARN ??=
+  'arn:aws:secretsmanager:us-east-1:123456789012:secret:package-inspection';
+process.env.EVENT_BUS ??= 'package-inspection';
+const worker = load(resolve(workerPath)) as { handler?: unknown };
+if (typeof worker.handler !== 'function') {
+  throw new Error('Worker ZIP does not export a Lambda handler');
+}
+console.log('Packaged worker handler loads');

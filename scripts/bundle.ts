@@ -1,5 +1,5 @@
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
+import { createRequire, isBuiltin } from 'node:module';
 import { dirname, join } from 'node:path';
 import { build } from 'esbuild';
 import { openapi } from '@infrastructure/http/swagger/openapi';
@@ -9,6 +9,7 @@ const result = await build({
   entryPoints: {
     'src/handlers/appointment': 'src/handlers/appointment.ts',
     'src/handlers/swagger': 'src/handlers/swagger.ts',
+    'src/handlers/worker': 'src/handlers/worker.ts',
   },
   outdir: '.local/bundle',
   bundle: true,
@@ -20,7 +21,7 @@ const result = await build({
 });
 await writeFile('.local/bundle/metafile.json', JSON.stringify(result.metafile, null, 2));
 for (const [file, output] of Object.entries(result.metafile.outputs)) {
-  if (output.imports.some((entry) => !entry.external || !entry.path.startsWith('node:'))) {
+  if (output.imports.some((entry) => !entry.external || !isBuiltin(entry.path))) {
     throw new Error(`Unexpected runtime file dependency: ${file}`);
   }
   console.log(`${file}: ${output.bytes} bytes`);
