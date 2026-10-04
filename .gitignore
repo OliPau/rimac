@@ -8,3 +8,5 @@ coverage/
 serverless.generated.json
 
 *.md
+!/README.md
+!/docs/documentacion-tecnica.md
