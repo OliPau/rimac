@@ -1,25 +1,22 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { afterAll, expect, test } from '@jest/globals';
-import { createConnection, type RowDataPacket } from 'mysql2/promise';
+import { createPool, type RowDataPacket } from 'mysql2/promise';
+import { MysqlClient } from '@infrastructure/persistence/mysql/client';
 import { MysqlStore } from '@infrastructure/persistence/mysql/repository';
 import { event } from '../../../../support/fixtures.ts';
 
-const connection = await createConnection({
+const pool = createPool({
   host: '127.0.0.1',
   port: 3307,
   user: 'test',
   password: 'local-only-test',
   database: 'appointments_pe',
   namedPlaceholders: true,
+  connectionLimit: 1,
 });
-const store = new MysqlStore({
-  async execute(sql, parameters) {
-    const [rows] = await connection.execute(sql, parameters);
-    return Array.isArray(rows) ? rows.map((row) => ({ ...row })) : [];
-  },
-});
+const store = new MysqlStore(new MysqlClient(pool));
 
-afterAll(() => connection.end());
+afterAll(() => pool.end());
 
 test('keeps one row per country and rejects a conflicting appointment', async () => {
   const insuredId = String(randomInt(100000)).padStart(5, '0');
@@ -35,7 +32,7 @@ test('keeps one row per country and rejects a conflicting appointment', async ()
       'Conflicting country appointment',
     );
 
-    const [rows] = await connection.execute<RowDataPacket[]>(
+    const [rows] = await pool.execute<RowDataPacket[]>(
       'SELECT id, country_iso FROM appointments WHERE insured_id = ? AND schedule_id = ?',
       [insuredId, scheduleId],
     );
@@ -47,7 +44,7 @@ test('keeps one row per country and rejects a conflicting appointment', async ()
     );
     expect(rows).toHaveLength(2);
   } finally {
-    await connection.execute('DELETE FROM appointments WHERE insured_id = ? AND schedule_id = ?', [
+    await pool.execute('DELETE FROM appointments WHERE insured_id = ? AND schedule_id = ?', [
       insuredId,
       scheduleId,
     ]);

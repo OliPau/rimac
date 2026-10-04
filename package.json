@@ -23,7 +23,8 @@
     "api:url": "tsx scripts/api-url.ts",
     "smoke": "tsx scripts/smoke.ts",
     "openapi": "tsx scripts/openapi.ts",
-    "swagger:local": "tsx scripts/swagger-local.ts"
+    "swagger:local": "tsx scripts/swagger-local.ts",
+    "migrate:mysql": "tsx scripts/migrate-mysql.ts"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "13.1.0",
@@ -38,7 +39,6 @@
     "fflate": "0.8.3",
     "jest": "30.5.2",
     "jiti": "2.7.0",
-    "mysql2": "3.24.5",
     "prettier": "3.9.9",
     "serverless": "4.43.0",
     "swagger-ui-dist": "5.33.1",
@@ -54,6 +54,7 @@
     "@aws-sdk/client-secrets-manager": "3.1144.0",
     "@aws-sdk/client-sns": "3.1144.0",
     "@aws-sdk/lib-dynamodb": "3.1144.0",
+    "mysql2": "3.24.5",
     "zod": "4.6.5"
   }
 }
