@@ -197,6 +197,12 @@ Resources:
                   ArnLike:
                     lambda:FunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
               - Effect: Allow
+                Action:
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - lambda:ListTags
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*
+              - Effect: Allow
                 Action: apigateway:*
                 Resource:
                   - !Sub arn:aws:apigateway:${AWS::Region}::/apis*
