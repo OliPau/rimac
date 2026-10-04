@@ -156,3 +156,42 @@ test('lists only the insured appointments and rejects an invalid insured ID', as
     body: expect.stringContaining('insuredId'),
   });
 });
+
+test('paginates newest appointments and rejects invalid query parameters and cursors', async () => {
+  const store = new MemoryAppointments();
+  const older = await store.create({ insuredId: '00123', scheduleId: 100, countryISO: 'PE' });
+  const newer = await store.create({ insuredId: '00123', scheduleId: 101, countryISO: 'PE' });
+  store.items.get(older.appointmentId)!.createdAt = '2026-01-01T00:00:00.000Z';
+  store.items.get(newer.appointmentId)!.createdAt = '2026-01-02T00:00:00.000Z';
+  const report = jest.fn();
+  const handle = httpHandler(
+    new CreateAppointment(store, publisher),
+    new ListAppointments(store),
+    report,
+  );
+  const get = (insuredId: string, queryStringParameters?: Record<string, string>) => ({
+    ...http('GET /appointments/{insuredId}'),
+    pathParameters: { insuredId },
+    ...(queryStringParameters ? { queryStringParameters } : {}),
+  });
+
+  const first = structured(await handle(get('00123', { limit: '1' })));
+  const page = JSON.parse(String(first.body)) as {
+    items: { appointmentId: string }[];
+    cursor: string;
+  };
+  expect(page.items.map((item) => item.appointmentId)).toEqual([newer.appointmentId]);
+  expect(page.cursor).toEqual(expect.any(String));
+  const second = structured(await handle(get('00123', { limit: '1', cursor: page.cursor })));
+  expect(JSON.parse(String(second.body)) as unknown).toMatchObject({
+    items: [{ appointmentId: older.appointmentId }],
+  });
+  for (const params of [{ limit: '0' }, { limit: '101' }, { extra: '1' }]) {
+    expect(await handle(get('00123', params))).toMatchObject({ statusCode: 400 });
+  }
+  expect(await handle(get('00124', { cursor: page.cursor }))).toMatchObject({
+    statusCode: 400,
+    body: expect.stringContaining('INVALID_CURSOR'),
+  });
+  expect(report).not.toHaveBeenCalled();
+});

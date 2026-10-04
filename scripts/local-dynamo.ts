@@ -1,7 +1,9 @@
 import {
   CreateTableCommand,
+  DescribeTableCommand,
   DynamoDBClient,
   ListTablesCommand,
+  UpdateTableCommand,
   waitUntilTableExists,
 } from '@aws-sdk/client-dynamodb';
 
@@ -33,10 +35,21 @@ try {
         AttributeDefinitions: [
           { AttributeName: 'insuredId', AttributeType: 'S' },
           { AttributeName: 'appointmentId', AttributeType: 'S' },
+          { AttributeName: 'createdAt', AttributeType: 'S' },
         ],
         KeySchema: [
           { AttributeName: 'insuredId', KeyType: 'HASH' },
           { AttributeName: 'appointmentId', KeyType: 'RANGE' },
+        ],
+        GlobalSecondaryIndexes: [
+          {
+            IndexName: 'insured-created-at',
+            KeySchema: [
+              { AttributeName: 'insuredId', KeyType: 'HASH' },
+              { AttributeName: 'createdAt', KeyType: 'RANGE' },
+            ],
+            Projection: { ProjectionType: 'ALL' },
+          },
         ],
       }),
     );
@@ -49,6 +62,41 @@ try {
     { client, minDelay: 1, maxDelay: 2, maxWaitTime: 10 },
     { TableName: table },
   );
+  const existing = await client.send(new DescribeTableCommand({ TableName: table }));
+  if (
+    !existing.Table?.GlobalSecondaryIndexes?.some(
+      (index) => index.IndexName === 'insured-created-at',
+    )
+  ) {
+    await client.send(
+      new UpdateTableCommand({
+        TableName: table,
+        AttributeDefinitions: [{ AttributeName: 'createdAt', AttributeType: 'S' }],
+        GlobalSecondaryIndexUpdates: [
+          {
+            Create: {
+              IndexName: 'insured-created-at',
+              KeySchema: [
+                { AttributeName: 'insuredId', KeyType: 'HASH' },
+                { AttributeName: 'createdAt', KeyType: 'RANGE' },
+              ],
+              Projection: { ProjectionType: 'ALL' },
+            },
+          },
+        ],
+      }),
+    );
+  }
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const current = await client.send(new DescribeTableCommand({ TableName: table }));
+    if (current.Table?.GlobalSecondaryIndexes?.some((index) => index.IndexStatus === 'ACTIVE')) {
+      break;
+    }
+    if (attempt === 19) {
+      throw new Error('Local appointment index did not become active');
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
   console.log('Local appointment table ready');
 } finally {
   client.destroy();

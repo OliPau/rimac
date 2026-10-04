@@ -77,28 +77,53 @@ test('reads the stored appointment after a conditional conflict and propagates s
   await expect(store.create(input)).rejects.toThrow('Storage unavailable');
 });
 
-test('follows DynamoDB continuation keys, including an empty intermediate page', async () => {
-  const key = { insuredId: input.insuredId, appointmentId: 'next' };
+test('queries newest appointments one page at a time through the date index', async () => {
   const saved = {
     ...input,
     appointmentId: identity(input).appointmentId,
     status: 'pending',
     createdAt: '2026-01-01T00:00:00.000Z',
   };
+  const key = {
+    insuredId: saved.insuredId,
+    appointmentId: saved.appointmentId,
+    createdAt: saved.createdAt,
+  };
   mock
     .on(QueryCommand)
-    .resolvesOnce({ Items: [], LastEvaluatedKey: key })
-    .resolves({ Items: [saved] });
+    .resolvesOnce({ Items: [saved], LastEvaluatedKey: key })
+    .resolves({ Items: [] });
 
-  expect(await new DynamoAppointments(client, 'appointments').list(input.insuredId)).toEqual({
-    items: [saved],
-  });
+  const store = new DynamoAppointments(client, 'appointments');
+  const first = await store.list(input.insuredId, 1);
+  expect(first).toEqual({ items: [saved], cursor: expect.any(String) });
+  expect(await store.list(input.insuredId, 1, first.cursor)).toEqual({ items: [] });
   expect(mock.commandCalls(QueryCommand)[0]?.args[0].input).toMatchObject({
+    IndexName: 'insured-created-at',
     KeyConditionExpression: 'insuredId = :insuredId',
     ExpressionAttributeValues: { ':insuredId': input.insuredId },
-    ConsistentRead: true,
+    ScanIndexForward: false,
+    Limit: 1,
   });
+  expect(mock.commandCalls(QueryCommand)[0]?.args[0].input.ConsistentRead).toBeUndefined();
   expect(mock.commandCalls(QueryCommand)[1]?.args[0].input.ExclusiveStartKey).toEqual(key);
+});
+
+test('rejects malformed and cross-insured cursors before querying DynamoDB', async () => {
+  const store = new DynamoAppointments(client, 'appointments');
+  const cursor = Buffer.from(
+    JSON.stringify({
+      insuredId: '00124',
+      appointmentId: identity(input).appointmentId,
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }),
+  ).toString('base64url');
+  for (const invalid of ['', 'not base64', `${cursor}=`, cursor]) {
+    await expect(store.list(input.insuredId, 1, invalid)).rejects.toThrow(
+      'Invalid pagination cursor',
+    );
+  }
+  expect(mock.commandCalls(QueryCommand)).toHaveLength(0);
 });
 
 test('confirms only a stored appointment with matching country and schedule', async () => {

@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { afterAll, expect, test } from '@jest/globals';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { CreateAppointment } from '@application/appointments/use-cases/create';
 import { identity } from '@domain/appointments/index';
 import { DynamoAppointments } from '@infrastructure/persistence/dynamo/repository';
@@ -83,4 +83,32 @@ test('keeps one stored appointment through concurrent retries and completion', a
     ],
   });
   expect(await store.list('not-stored')).toEqual({ items: [] });
+});
+
+test('lists the newest appointment first and continues from its cursor', async () => {
+  const insuredId = randomInt(100_000).toString().padStart(5, '0');
+  const base = { insuredId, countryISO: 'PE', status: 'pending' };
+  const older = {
+    ...base,
+    appointmentId: '10000000-0000-4000-8000-000000000011',
+    scheduleId: 101,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  };
+  const newer = {
+    ...base,
+    appointmentId: '10000000-0000-4000-8000-000000000012',
+    scheduleId: 102,
+    createdAt: '2026-01-02T00:00:00.000Z',
+  };
+  await client.send(new PutCommand({ TableName: table, Item: older }));
+  await client.send(new PutCommand({ TableName: table, Item: newer }));
+
+  const store = new DynamoAppointments(client, table);
+  const first = await store.list(insuredId, 1);
+  expect(first).toEqual({ items: [newer], cursor: expect.any(String) });
+  const second = await store.list(insuredId, 1, first.cursor);
+  expect(second.items).toEqual([older]);
+  if (second.cursor) {
+    expect(await store.list(insuredId, 1, second.cursor)).toEqual({ items: [] });
+  }
 });

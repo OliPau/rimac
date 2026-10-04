@@ -5,6 +5,6 @@ export class ListAppointments {
   constructor(private readonly appointments: Pick<Appointments, 'list'>) {}
 
   execute(input: ListAppointmentsDto) {
-    return this.appointments.list(input.insuredId);
+    return this.appointments.list(input.insuredId, input.limit ?? 20, input.cursor);
   }
 }

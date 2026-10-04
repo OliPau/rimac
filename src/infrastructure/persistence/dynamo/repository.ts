@@ -5,13 +5,14 @@ import {
   QueryCommand,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
-import type { QueryCommandInput } from '@aws-sdk/lib-dynamodb';
 import type { Appointment, CompletionEvent, Request } from '@domain/appointments/index';
 import { identity } from '@domain/appointments/index';
 import type { Acceptance } from '@application/appointments/dto/create.dto';
+import type { Page } from '@application/appointments/dto/list.dto';
 import { accept } from '@application/appointments/helpers/registration';
 import type { Appointments } from '@application/appointments/ports/repositories';
 import { appointment } from '@infrastructure/shared/appointment.schema';
+import { decodeCursor, encodeCursor } from './cursor.ts';
 
 export class DynamoAppointments implements Appointments {
   constructor(
@@ -74,23 +75,23 @@ export class DynamoAppointments implements Appointments {
     );
   }
 
-  async list(insuredId: string): Promise<{ items: Appointment[] }> {
-    const items: Appointment[] = [];
-    let cursor: QueryCommandInput['ExclusiveStartKey'];
-    do {
-      const result = await this.client.send(
-        new QueryCommand({
-          TableName: this.table,
-          KeyConditionExpression: 'insuredId = :insuredId',
-          ExpressionAttributeValues: { ':insuredId': insuredId },
-          ConsistentRead: true,
-          ...(cursor ? { ExclusiveStartKey: cursor } : {}),
-        }),
-      );
-      items.push(...(result.Items ?? []).map((item) => appointment.parse(item)));
-      cursor = result.LastEvaluatedKey;
-    } while (cursor);
-    return { items };
+  async list(insuredId: string, limit = 20, cursor?: string): Promise<Page> {
+    const start = cursor === undefined ? undefined : decodeCursor(cursor, insuredId);
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: this.table,
+        IndexName: 'insured-created-at',
+        KeyConditionExpression: 'insuredId = :insuredId',
+        ExpressionAttributeValues: { ':insuredId': insuredId },
+        ScanIndexForward: false,
+        Limit: limit,
+        ...(start ? { ExclusiveStartKey: start } : {}),
+      }),
+    );
+    return {
+      items: (result.Items ?? []).map((item) => appointment.parse(item)),
+      ...(result.LastEvaluatedKey ? { cursor: encodeCursor(result.LastEvaluatedKey) } : {}),
+    };
   }
 
   async confirm(event: CompletionEvent): Promise<void> {

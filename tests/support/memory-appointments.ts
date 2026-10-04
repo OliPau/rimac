@@ -2,6 +2,7 @@ import type { Appointment, CompletionEvent, Request } from '@domain/appointments
 import { identity } from '@domain/appointments/index';
 import { accept } from '@application/appointments/helpers/registration';
 import type { Appointments } from '@application/appointments/ports/repositories';
+import { decodeCursor, encodeCursor } from '@infrastructure/persistence/dynamo/cursor';
 
 export class MemoryAppointments implements Appointments {
   readonly items = new Map<string, Appointment>();
@@ -30,9 +31,31 @@ export class MemoryAppointments implements Appointments {
     return Promise.resolve();
   }
 
-  list(insuredId: string) {
+  list(insuredId: string, limit = 20, cursor?: string) {
+    const start = cursor === undefined ? undefined : decodeCursor(cursor, insuredId);
+    const matching = [...this.items.values()]
+      .filter((item) => item.insuredId === insuredId)
+      .sort(
+        (left, right) =>
+          right.createdAt.localeCompare(left.createdAt) ||
+          right.appointmentId.localeCompare(left.appointmentId),
+      );
+    const offset = start
+      ? matching.findIndex((item) => item.appointmentId === start.appointmentId) + 1
+      : 0;
+    const items = matching.slice(offset, offset + limit);
+    const last = items.at(-1);
     return Promise.resolve({
-      items: [...this.items.values()].filter((item) => item.insuredId === insuredId),
+      items,
+      ...(last && offset + limit < matching.length
+        ? {
+            cursor: encodeCursor({
+              insuredId: last.insuredId,
+              appointmentId: last.appointmentId,
+              createdAt: last.createdAt,
+            }),
+          }
+        : {}),
     });
   }
 }

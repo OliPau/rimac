@@ -93,6 +93,8 @@ export function openapi(server = '/') {
       '/appointments/{insuredId}': {
         get: {
           summary: 'Consultar citas',
+          description:
+            'Devuelve las citas más recientes primero. El índice puede tardar brevemente en reflejar una cita recién registrada.',
           parameters: [
             {
               in: 'path',
@@ -100,16 +102,33 @@ export function openapi(server = '/') {
               required: true,
               schema: z.toJSONSchema(insured),
             },
+            {
+              in: 'query',
+              name: 'limit',
+              required: false,
+              description: 'Cantidad de citas por página; por defecto 20.',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+            },
+            {
+              in: 'query',
+              name: 'cursor',
+              required: false,
+              description: 'Cursor recibido en la página anterior.',
+              schema: { type: 'string' },
+            },
           ],
           responses: {
             '200': {
-              description: 'Estado actual',
+              description: 'Página de citas, de más recientes a más antiguas',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     required: ['items'],
-                    properties: { items: { type: 'array', items: z.toJSONSchema(appointment) } },
+                    properties: {
+                      items: { type: 'array', items: z.toJSONSchema(appointment) },
+                      cursor: { type: 'string', description: 'Enviar en la siguiente consulta.' },
+                    },
                   },
                   example: {
                     items: [
@@ -126,7 +145,7 @@ export function openapi(server = '/') {
                 },
               },
             },
-            '400': { description: 'Asegurado inválido' },
+            '400': { description: 'Asegurado, límite o cursor inválido' },
             '503': { description: 'No disponible' },
           },
         },

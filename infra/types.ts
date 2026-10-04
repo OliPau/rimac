@@ -20,5 +20,10 @@ export interface Table {
     SSESpecification: { SSEEnabled: boolean };
     AttributeDefinitions: { AttributeName: string; AttributeType: 'S' }[];
     KeySchema: { AttributeName: string; KeyType: 'HASH' | 'RANGE' }[];
+    GlobalSecondaryIndexes?: {
+      IndexName: string;
+      KeySchema: { AttributeName: string; KeyType: 'HASH' | 'RANGE' }[];
+      Projection: { ProjectionType: 'ALL' };
+    }[];
   };
 }

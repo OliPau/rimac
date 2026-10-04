@@ -43,6 +43,16 @@ test('connects POST and GET to the appointment table and execution role', () => 
               { AttributeName: 'insuredId', KeyType: 'HASH' },
               { AttributeName: 'appointmentId', KeyType: 'RANGE' },
             ],
+            GlobalSecondaryIndexes: [
+              {
+                IndexName: 'insured-created-at',
+                KeySchema: [
+                  { AttributeName: 'insuredId', KeyType: 'HASH' },
+                  { AttributeName: 'createdAt', KeyType: 'RANGE' },
+                ],
+                Projection: { ProjectionType: 'ALL' },
+              },
+            ],
           },
         },
         AppointmentRole: {
@@ -61,6 +71,10 @@ test('connects POST and GET to the appointment table and execution role', () => 
                         'dynamodb:UpdateItem',
                       ],
                       Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
+                    },
+                    {
+                      Action: ['dynamodb:Query'],
+                      Resource: { 'Fn::Sub': '${Appointments.Arn}/index/insured-created-at' },
                     },
                     { Action: ['sns:Publish'], Resource: { Ref: 'Topic' } },
                     {

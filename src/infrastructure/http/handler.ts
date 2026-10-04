@@ -6,6 +6,7 @@ import type { ListAppointments } from '@application/appointments/use-cases/list'
 import { insured, request } from '@infrastructure/shared/appointment.schema';
 import { validationDetails } from './helpers/validation.ts';
 import { response } from './helpers/response.ts';
+import { InvalidCursor } from '@infrastructure/persistence/dynamo/cursor';
 
 export function httpHandler(
   create: CreateAppointment,
@@ -36,11 +37,41 @@ export function httpHandler(
             error: { code: 'INVALID_REQUEST', details: validationDetails('insuredId', id.error) },
           });
         }
-        return response(200, await list.execute({ insuredId: id.data }));
+        const query = event.queryStringParameters ?? {};
+        const limit = query.limit;
+        if (
+          Object.keys(query).some((name) => name !== 'limit' && name !== 'cursor') ||
+          (limit !== undefined && !/^(?:[1-9]|[1-9][0-9]|100)$/.test(limit))
+        ) {
+          return response(400, {
+            error: {
+              code: 'INVALID_REQUEST',
+              details: [
+                { field: 'query', message: 'Use limit entre 1 y 100 y, si corresponde, cursor.' },
+              ],
+            },
+          });
+        }
+        return response(
+          200,
+          await list.execute({
+            insuredId: id.data,
+            limit: limit === undefined ? 20 : Number(limit),
+            ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+          }),
+        );
       }
 
       return response(404, { error: { code: 'NOT_FOUND' } });
     } catch (error) {
+      if (error instanceof InvalidCursor) {
+        return response(400, {
+          error: {
+            code: 'INVALID_CURSOR',
+            details: [{ field: 'cursor', message: 'El cursor no es válido para este asegurado.' }],
+          },
+        });
+      }
       report(error instanceof Error ? error.name : 'UnknownError');
       return response(503, { error: { code: 'SERVICE_UNAVAILABLE' } });
     }

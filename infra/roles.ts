@@ -50,6 +50,11 @@ export function roles(): Resources {
       },
       {
         Effect: 'Allow',
+        Action: ['dynamodb:Query'],
+        Resource: { 'Fn::Sub': '${Appointments.Arn}/index/insured-created-at' },
+      },
+      {
+        Effect: 'Allow',
         Action: ['sns:Publish'],
         Resource: { Ref: 'Topic' },
       },
