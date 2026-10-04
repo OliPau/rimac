@@ -28,6 +28,7 @@ jobs:
       SWAGGER_SECRET_ARN: ${{ vars.SWAGGER_SECRET_ARN }}
       SQL_SECRET_PE_ARN: ${{ vars.SQL_SECRET_PE_ARN }}
       SQL_SECRET_CL_ARN: ${{ vars.SQL_SECRET_CL_ARN }}
+      ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4

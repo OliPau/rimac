@@ -6,6 +6,8 @@ export interface Resource {
   Type: string;
   Properties: Record<string, unknown>;
   DependsOn?: string[];
+  DeletionPolicy?: string;
+  UpdateReplacePolicy?: string;
 }
 
 export type Resources = Record<string, Resource>;

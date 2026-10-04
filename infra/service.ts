@@ -1,6 +1,7 @@
 import type { AWS } from '@serverless/typescript';
 import { mysqlSecrets, prefix, project, resource, swaggerSecret } from './config.ts';
 import { messaging } from './messaging.ts';
+import { monitoring } from './monitoring.ts';
 import { roles } from './roles.ts';
 import { tables } from './tables.ts';
 import type { Functions } from './types.ts';
@@ -82,6 +83,17 @@ export function service() {
     build: { esbuild: false },
     package: { individually: true },
     functions,
-    resources: { Resources: { ...tables(), ...roles(), ...messaging() } },
+    resources: {
+      Resources: { ...tables(), ...roles(), ...messaging(), ...monitoring() },
+      extensions: {
+        HttpApiStage: {
+          Properties: {
+            RouteSettings: {
+              'POST /appointments': { ThrottlingRateLimit: 5, ThrottlingBurstLimit: 10 },
+            },
+          },
+        },
+      },
+    },
   } satisfies AWS;
 }

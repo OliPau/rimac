@@ -171,6 +171,7 @@ Resources:
                   - sns:*
                   - sqs:*
                   - events:*
+                  - cloudwatch:*
                 Resource:
                   - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${Stage}-*
@@ -179,6 +180,31 @@ Resources:
                   - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Stage}-*
                   - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-${Stage}
                   - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${ProjectName}-${Stage}/*
+                  - !Sub arn:aws:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:${ProjectName}-${Stage}-*
+              - Effect: Allow
+                Action: kms:CreateKey
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestTag/Project: !Ref ProjectName
+              - Effect: Allow
+                Action:
+                  - kms:DescribeKey
+                  - kms:GetKeyPolicy
+                  - kms:PutKeyPolicy
+                  - kms:EnableKeyRotation
+                  - kms:GetKeyRotationStatus
+                  - kms:ListResourceTags
+                Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/Project: !Ref ProjectName
+              - Effect: Allow
+                Action: kms:TagResource
+                Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+                Condition:
+                  StringEquals:
+                    aws:RequestTag/Project: !Ref ProjectName
               - Effect: Allow
                 Action:
                   - lambda:CreateEventSourceMapping
