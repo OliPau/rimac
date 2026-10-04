@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomInt } from 'node:crypto';
+import { setTimeout as delay } from 'node:timers/promises';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
 import { project, resource } from '../infra/config.ts';
@@ -82,25 +83,29 @@ for (const countryISO of ['PE', 'CL'] as const) {
   assert.equal(repeatedBody.createdAt, accepted.createdAt);
   assert.equal(repeatedBody.status, 'completed');
 
-  const listed = await fetch(`${endpoint}/${input.insuredId}`, {
-    signal: AbortSignal.timeout(30000),
-  });
-  if (listed.status !== 200) {
-    throw new Error(`${countryISO}: GET returned ${listed.status}: ${await listed.text()}`);
-  }
-  const page = (await listed.json()) as {
-    items: { appointmentId: string; createdAt: string; status: string }[];
-  };
-  assert.ok(Array.isArray(page.items), `${countryISO}: GET did not return items`);
-  assert.ok(
-    page.items.some(
+  let listed = false;
+  for (let attempt = 0; attempt < 15 && !listed; attempt++) {
+    const result = await fetch(`${endpoint}/${input.insuredId}`, {
+      signal: AbortSignal.timeout(30000),
+    });
+    if (result.status !== 200) {
+      throw new Error(`${countryISO}: GET returned ${result.status}: ${await result.text()}`);
+    }
+    const page = (await result.json()) as {
+      items: { appointmentId: string; createdAt: string; status: string }[];
+    };
+    assert.ok(Array.isArray(page.items), `${countryISO}: GET did not return items`);
+    listed = page.items.some(
       (item) =>
         item.appointmentId === accepted.appointmentId &&
         item.createdAt === accepted.createdAt &&
         item.status === 'completed',
-    ),
-    `${countryISO}: GET did not return the created appointment`,
-  );
+    );
+    if (!listed) {
+      await delay(2000);
+    }
+  }
+  assert.ok(listed, `${countryISO}: GET did not return the completed appointment`);
 
   console.log(`${countryISO}: appointment ${accepted.appointmentId} completed and listed`);
 }

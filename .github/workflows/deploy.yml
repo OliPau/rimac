@@ -62,6 +62,21 @@ jobs:
         if: inputs.mode == 'deploy'
         id: api
         run: echo "url=$(pnpm exec tsx scripts/api-url.ts)" >> "$GITHUB_OUTPUT"
+      - name: Wait for the appointment index
+        if: inputs.mode == 'deploy'
+        run: |
+          for attempt in {1..60}; do
+            status=$(aws dynamodb describe-table \
+              --table-name rimac-learning-learning-appointments \
+              --query "Table.GlobalSecondaryIndexes[?IndexName=='insured-created-at'].IndexStatus | [0]" \
+              --output text)
+            if [ "$status" = ACTIVE ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Appointment index did not become active" >&2
+          exit 1
       - name: Verify the deployed POST
         if: inputs.mode == 'deploy'
         run: pnpm smoke
