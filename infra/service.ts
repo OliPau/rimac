@@ -16,6 +16,13 @@ export function service() {
       events: [
         { httpApi: { method: 'POST', path: '/appointments' } },
         { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
+        {
+          sqs: {
+            arn: { 'Fn::GetAtt': ['ConfirmationQueue', 'Arn'] },
+            batchSize: 5,
+            functionResponseType: 'ReportBatchItemFailures',
+          },
+        },
       ],
     },
     swagger: {

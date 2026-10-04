@@ -5,6 +5,7 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import { mockClient } from 'aws-sdk-client-mock';
 import { identity } from '@domain/appointments/index';
@@ -98,4 +99,25 @@ test('follows DynamoDB continuation keys, including an empty intermediate page',
     ConsistentRead: true,
   });
   expect(mock.commandCalls(QueryCommand)[1]?.args[0].input.ExclusiveStartKey).toEqual(key);
+});
+
+test('confirms only a stored appointment with matching country and schedule', async () => {
+  mock.on(UpdateCommand).resolves({});
+  const store = new DynamoAppointments(client, 'appointments');
+  await store.confirm({
+    version: 1,
+    type: 'appointment.completed',
+    ...input,
+    appointmentId: identity(input).appointmentId,
+    eventId: '10000000-0000-4000-8000-000000000002',
+    correlationId: '10000000-0000-4000-8000-000000000003',
+    occurredAt: '2026-10-03T12:00:00.000Z',
+  });
+  expect(mock.commandCalls(UpdateCommand)[0]?.args[0].input).toMatchObject({
+    Key: { insuredId: input.insuredId, appointmentId: identity(input).appointmentId },
+    UpdateExpression: 'SET #status = :completed',
+    ConditionExpression:
+      'countryISO = :country AND scheduleId = :schedule AND (#status = :pending OR #status = :completed)',
+    ExpressionAttributeValues: { ':country': 'PE', ':schedule': 100 },
+  });
 });

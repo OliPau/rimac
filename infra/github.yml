@@ -170,12 +170,32 @@ Resources:
                   - dynamodb:*
                   - sns:*
                   - sqs:*
+                  - events:*
                 Resource:
                   - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
                   - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${ProjectName}-${Stage}-*
                   - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-${Stage}-*
                   - !Sub arn:aws:sns:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Stage}*
                   - !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${ProjectName}-${Stage}-*
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${ProjectName}-${Stage}
+                  - !Sub arn:aws:events:${AWS::Region}:${AWS::AccountId}:rule/${ProjectName}-${Stage}/*
+              - Effect: Allow
+                Action:
+                  - lambda:CreateEventSourceMapping
+                  - lambda:ListEventSourceMappings
+                Resource: '*'
+                Condition:
+                  ArnLikeIfExists:
+                    lambda:FunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
+              - Effect: Allow
+                Action:
+                  - lambda:GetEventSourceMapping
+                  - lambda:UpdateEventSourceMapping
+                  - lambda:DeleteEventSourceMapping
+                Resource: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:event-source-mapping:*
+                Condition:
+                  ArnLike:
+                    lambda:FunctionArn: !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ProjectName}-${Stage}-*
               - Effect: Allow
                 Action: apigateway:*
                 Resource:

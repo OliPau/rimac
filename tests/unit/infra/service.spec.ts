@@ -21,6 +21,13 @@ test('connects POST and GET to the appointment table and execution role', () => 
         events: [
           { httpApi: { method: 'POST', path: '/appointments' } },
           { httpApi: { method: 'GET', path: '/appointments/{insuredId}' } },
+          {
+            sqs: {
+              arn: { 'Fn::GetAtt': ['ConfirmationQueue', 'Arn'] },
+              batchSize: 5,
+              functionResponseType: 'ReportBatchItemFailures',
+            },
+          },
         ],
       },
     },
@@ -47,10 +54,19 @@ test('connects POST and GET to the appointment table and execution role', () => 
                   Statement: [
                     { Action: ['logs:CreateLogStream', 'logs:PutLogEvents'] },
                     {
-                      Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
+                      Action: [
+                        'dynamodb:GetItem',
+                        'dynamodb:PutItem',
+                        'dynamodb:Query',
+                        'dynamodb:UpdateItem',
+                      ],
                       Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
                     },
                     { Action: ['sns:Publish'], Resource: { Ref: 'Topic' } },
+                    {
+                      Action: ['sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes'],
+                      Resource: { 'Fn::GetAtt': ['ConfirmationQueue', 'Arn'] },
+                    },
                     {
                       Action: ['kms:GenerateDataKey', 'kms:Decrypt'],
                       Condition: {
@@ -145,6 +161,51 @@ test('routes each country to its own queue with a delivery dead letter queue', (
         FilterPolicy: { countryISO: [country] },
         RedrivePolicy: {
           deadLetterTargetArn: { 'Fn::GetAtt': [`DeliveryDLQ${country}`, 'Arn'] },
+        },
+      },
+    });
+  }
+});
+
+test('routes completed events to a retryable queue with delivery and processing DLQs', () => {
+  const resources: Record<string, unknown> = service().resources.Resources;
+  expect(resources.Bus).toMatchObject({ Type: 'AWS::Events::EventBus' });
+  expect(resources.CompletionRule).toMatchObject({
+    Type: 'AWS::Events::Rule',
+    Properties: {
+      EventBusName: { Ref: 'Bus' },
+      EventPattern: { source: ['rimac.appointments'], 'detail-type': ['appointment.completed'] },
+      Targets: [
+        {
+          Arn: { 'Fn::GetAtt': ['ConfirmationQueue', 'Arn'] },
+          InputPath: '$.detail',
+          DeadLetterConfig: { Arn: { 'Fn::GetAtt': ['EventDeliveryDLQ', 'Arn'] } },
+        },
+      ],
+    },
+  });
+  expect(resources.ConfirmationQueue).toMatchObject({
+    Type: 'AWS::SQS::Queue',
+    Properties: {
+      VisibilityTimeout: 90,
+      RedrivePolicy: {
+        deadLetterTargetArn: { 'Fn::GetAtt': ['ConfirmationDLQ', 'Arn'] },
+        maxReceiveCount: 5,
+      },
+    },
+  });
+  for (const name of ['ConfirmationPolicy', 'EventDeliveryPolicy']) {
+    expect(resources[name]).toMatchObject({
+      Properties: {
+        PolicyDocument: {
+          Statement: [
+            {
+              Principal: { Service: 'events.amazonaws.com' },
+              Condition: {
+                ArnEquals: { 'aws:SourceArn': { 'Fn::GetAtt': ['CompletionRule', 'Arn'] } },
+              },
+            },
+          ],
         },
       },
     });

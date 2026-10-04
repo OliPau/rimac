@@ -3,9 +3,10 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import type { QueryCommandInput } from '@aws-sdk/lib-dynamodb';
-import type { Appointment, Request } from '@domain/appointments/index';
+import type { Appointment, CompletionEvent, Request } from '@domain/appointments/index';
 import { identity } from '@domain/appointments/index';
 import type { Acceptance } from '@application/appointments/dto/create.dto';
 import { accept } from '@application/appointments/helpers/registration';
@@ -90,5 +91,24 @@ export class DynamoAppointments implements Appointments {
       cursor = result.LastEvaluatedKey;
     } while (cursor);
     return { items };
+  }
+
+  async confirm(event: CompletionEvent): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.table,
+        Key: { insuredId: event.insuredId, appointmentId: event.appointmentId },
+        UpdateExpression: 'SET #status = :completed',
+        ConditionExpression:
+          'countryISO = :country AND scheduleId = :schedule AND (#status = :pending OR #status = :completed)',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: {
+          ':country': event.countryISO,
+          ':schedule': event.scheduleId,
+          ':pending': 'pending',
+          ':completed': 'completed',
+        },
+      }),
+    );
   }
 }

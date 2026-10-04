@@ -45,13 +45,18 @@ export function roles(): Resources {
     AppointmentRole: lambdaRole('appointment', [
       {
         Effect: 'Allow',
-        Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query'],
+        Action: ['dynamodb:GetItem', 'dynamodb:PutItem', 'dynamodb:Query', 'dynamodb:UpdateItem'],
         Resource: { 'Fn::GetAtt': ['Appointments', 'Arn'] },
       },
       {
         Effect: 'Allow',
         Action: ['sns:Publish'],
         Resource: { Ref: 'Topic' },
+      },
+      {
+        Effect: 'Allow',
+        Action: ['sqs:ReceiveMessage', 'sqs:DeleteMessage', 'sqs:GetQueueAttributes'],
+        Resource: { 'Fn::GetAtt': ['ConfirmationQueue', 'Arn'] },
       },
       {
         Effect: 'Allow',
