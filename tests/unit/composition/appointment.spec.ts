@@ -44,7 +44,14 @@ test('connects the Lambda entrypoint to DynamoDB and reports storage failures', 
 
   client.on(GetCommand).rejects(new Error('Storage unavailable'));
   expect(await handler(event)).toMatchObject({ statusCode: 503 });
-  expect(report).toHaveBeenCalledWith('RequestFailed', { errorName: 'Error' });
+  expect(report).toHaveBeenCalledWith(
+    'RequestFailed',
+    expect.objectContaining({
+      errorName: 'Error',
+      requestId: 'request',
+      errorStack: expect.any(Array),
+    }),
+  );
 });
 
 test('requires the appointment table name', async () => {
@@ -67,8 +74,11 @@ test('routes SQS confirmations through the Lambda entrypoint', async () => {
     batchItemFailures: [{ itemIdentifier: 'message-1' }],
   });
   expect(client.commandCalls(UpdateCommand)).toHaveLength(1);
-  expect(report).toHaveBeenCalledWith('ConfirmationFailed', {
-    messageId: 'message-1',
-    errorName: 'ZodError',
-  });
+  expect(report).toHaveBeenCalledWith(
+    'ConfirmationFailed',
+    expect.objectContaining({
+      messageId: 'message-1',
+      errorName: 'ZodError',
+    }),
+  );
 });

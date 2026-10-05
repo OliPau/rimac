@@ -101,7 +101,10 @@ test('returns 503 without revealing credential or asset failures', async () => {
     body: 'Documentation temporarily unavailable',
   });
   expect(report).toHaveBeenCalledTimes(2);
-  expect(report).toHaveBeenLastCalledWith('Error');
+  expect(report).toHaveBeenLastCalledWith(
+    expect.objectContaining({ errorName: 'Error', operation: 'Swagger' }),
+  );
+  expect(JSON.stringify(report.mock.calls)).not.toContain('private');
 });
 
 test('renews the secret after one minute and rejects stale credentials on refresh failure', async () => {

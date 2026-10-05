@@ -24,11 +24,17 @@ test('reports the failed country record while acknowledging the saved record', a
     correlationId: event.correlationId,
     country: 'PE',
   });
-  expect(error).toHaveBeenCalledWith('CountryFailed', {
-    messageId: 'message-1',
-    errorName: 'Error',
-    country: 'PE',
-  });
+  expect(error).toHaveBeenCalledWith(
+    'CountryFailed',
+    expect.objectContaining({
+      messageId: 'message-1',
+      errorName: 'Error',
+      country: 'PE',
+      appointmentId: event.appointmentId,
+      correlationId: event.correlationId,
+      errorMessage: 'Unexpected appointment country',
+    }),
+  );
 });
 
 test('retries a saved message if confirmation publishing fails', async () => {

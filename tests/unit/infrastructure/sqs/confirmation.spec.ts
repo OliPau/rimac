@@ -22,8 +22,13 @@ test('reports invalid and failed confirmations without blocking the next record'
     appointmentId: event.appointmentId,
     correlationId: event.correlationId,
   });
-  expect(error).toHaveBeenCalledWith('ConfirmationFailed', {
-    messageId: 'message-1',
-    errorName: 'Error',
-  });
+  expect(error).toHaveBeenCalledWith(
+    'ConfirmationFailed',
+    expect.objectContaining({
+      messageId: 'message-1',
+      errorName: 'Error',
+      appointmentId: event.appointmentId,
+      correlationId: event.correlationId,
+    }),
+  );
 });

@@ -85,7 +85,8 @@ export function openapi(server = '/') {
             },
             '413': { description: 'PAYLOAD_TOO_LARGE: más de 4096 bytes' },
             '503': {
-              description: 'SERVICE_UNAVAILABLE: la operación no está disponible temporalmente',
+              description:
+                'SERVICE_UNAVAILABLE: la operación no está disponible temporalmente. error.requestId identifica la petición en los logs.',
             },
           },
         },
@@ -146,7 +147,9 @@ export function openapi(server = '/') {
               },
             },
             '400': { description: 'Asegurado, límite o cursor inválido' },
-            '503': { description: 'No disponible' },
+            '503': {
+              description: 'No disponible. error.requestId identifica la petición en los logs.',
+            },
           },
         },
       },

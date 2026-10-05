@@ -10,6 +10,7 @@ import { mysqlCredentials } from '@infrastructure/persistence/mysql/credentials'
 import { MysqlStore } from '@infrastructure/persistence/mysql/repository';
 import { countryHandler } from '@infrastructure/sqs/country';
 import { env, logger } from './config.ts';
+import { errorDetails } from '@infrastructure/shared/error';
 
 function workerCountry(value: string): Country {
   if (value !== 'PE' && value !== 'CL') {
@@ -50,7 +51,12 @@ async function makeHandler(countryISO: Country) {
 export async function handleCountry(event: SQSEvent) {
   handler ??= makeHandler(country).catch((error: unknown) => {
     handler = undefined;
-    throw error;
+    logger.error('WorkerInitializationFailed', {
+      ...errorDetails(error),
+      country,
+      operation: 'InitializeWorker',
+    });
+    throw new Error('Worker initialization failed');
   });
   return (await handler)(event);
 }

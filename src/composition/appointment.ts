@@ -10,7 +10,7 @@ import { logger } from './config.ts';
 export const handleHttp = httpHandler(
   new CreateAppointment(appointments, publisher),
   new ListAppointments(appointments),
-  (errorName) => logger.error('RequestFailed', { errorName }),
+  (details) => logger.error('RequestFailed', details),
 );
 
 export const handleConfirmation = confirmationHandler(new ConfirmAppointment(appointments), logger);

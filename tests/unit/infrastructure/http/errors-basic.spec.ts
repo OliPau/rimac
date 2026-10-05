@@ -28,9 +28,16 @@ test('translates routing and dependency failures without exposing their causes',
   for (const name of ['Error', 'UnknownError']) {
     expect(await handle(input)).toMatchObject({
       statusCode: 503,
-      body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE' } }),
+      body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', requestId: 'request' } }),
     });
-    expect(report).toHaveBeenLastCalledWith(name);
+    expect(report).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        errorName: name,
+        requestId: 'request',
+        operation: 'POST /appointments',
+      }),
+    );
+    expect(JSON.stringify(report.mock.calls)).not.toContain('private');
   }
 });
 
@@ -56,8 +63,14 @@ test('returns 503 when publishing fails after the appointment was saved', async 
   );
   expect(result).toMatchObject({
     statusCode: 503,
-    body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE' } }),
+    body: JSON.stringify({ error: { code: 'SERVICE_UNAVAILABLE', requestId: 'request' } }),
   });
   expect(store.items.size).toBe(1);
-  expect(report).toHaveBeenCalledWith('Error');
+  expect(report).toHaveBeenCalledWith(
+    expect.objectContaining({
+      errorName: 'Error',
+      requestId: 'request',
+      errorStack: expect.any(Array),
+    }),
+  );
 });

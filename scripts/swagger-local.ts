@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { openapi } from '@infrastructure/http/swagger/openapi';
+import { errorDetails } from '@infrastructure/shared/error';
 const require = createRequire(import.meta.url);
 const directory = dirname(require.resolve('swagger-ui-dist/package.json'));
 const routes: Record<string, { path: string; type: string }> = {
@@ -45,7 +46,8 @@ createServer((request, response) => {
       return;
     }
     response.writeHead(200, { 'content-type': asset.type }).end(await readFile(asset.path));
-  })().catch(() => {
+  })().catch((error: unknown) => {
+    console.error('LocalSwaggerFailed', errorDetails(error));
     response.writeHead(500).end('Local documentation unavailable');
   });
 }).listen(8080, '127.0.0.1', () => console.log('http://127.0.0.1:8080/swagger'));
