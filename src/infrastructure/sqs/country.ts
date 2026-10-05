@@ -18,6 +18,7 @@ export function countryHandler(process: ProcessAppointment, country: Country, lo
           country,
         });
       },
-      (messageId, errorName) => logger.error('CountryFailed', { messageId, errorName, country }),
+      (details) =>
+        logger.error('CountryFailed', { ...details, country, operation: 'ProcessAppointment' }),
     );
 }

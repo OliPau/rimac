@@ -16,6 +16,7 @@ export function confirmationHandler(confirm: Pick<ConfirmAppointment, 'execute'>
           correlationId: event.correlationId,
         });
       },
-      (messageId, errorName) => logger.error('ConfirmationFailed', { messageId, errorName }),
+      (details) =>
+        logger.error('ConfirmationFailed', { ...details, operation: 'ConfirmAppointment' }),
     );
 }

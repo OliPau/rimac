@@ -44,8 +44,11 @@ export class CompletionPublisher implements ConfirmationPublisher {
         ],
       }),
     );
-    if (result.FailedEntryCount || result.Entries?.some((entry) => entry.ErrorCode)) {
-      throw new Error('EventBridge rejected confirmation');
+    const failed = result.Entries?.find((entry) => entry.ErrorCode);
+    if (result.FailedEntryCount || failed) {
+      throw Object.assign(new Error('EventBridge rejected confirmation'), {
+        code: failed?.ErrorCode,
+      });
     }
     if (!result.Entries?.[0]?.EventId) {
       throw new Error('Missing EventBridge receipt');

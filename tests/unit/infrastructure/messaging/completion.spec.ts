@@ -36,7 +36,10 @@ test.each([
   { FailedEntryCount: 0, Entries: [{ ErrorCode: 'AccessDeniedException' }] },
 ])('rejects a per-entry EventBridge error', async (response) => {
   eventBridge.on(PutEventsCommand).resolves(response);
-  await expect(publisher.publish(completion)).rejects.toThrow('EventBridge rejected confirmation');
+  await expect(publisher.publish(completion)).rejects.toMatchObject({
+    message: 'EventBridge rejected confirmation',
+    code: response.Entries[0]?.ErrorCode,
+  });
 });
 
 test('rejects a missing receipt and propagates SDK errors', async () => {

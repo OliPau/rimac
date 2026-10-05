@@ -7,11 +7,12 @@ import { insured, request } from '@infrastructure/shared/appointment.schema';
 import { validationDetails } from './helpers/validation.ts';
 import { response } from './helpers/response.ts';
 import { InvalidCursor } from '@infrastructure/persistence/dynamo/cursor';
+import { errorDetails, type ErrorDetails } from '@infrastructure/shared/error';
 
 export function httpHandler(
   create: CreateAppointment,
   list: ListAppointments,
-  report: (name: string) => void,
+  report: (details: ErrorDetails) => void,
 ) {
   return async (event: APIGatewayProxyEventV2) => {
     try {
@@ -72,8 +73,9 @@ export function httpHandler(
           },
         });
       }
-      report(error instanceof Error ? error.name : 'UnknownError');
-      return response(503, { error: { code: 'SERVICE_UNAVAILABLE' } });
+      const requestId = event.requestContext.requestId;
+      report(errorDetails(error, { requestId, operation: event.routeKey }));
+      return response(503, { error: { code: 'SERVICE_UNAVAILABLE', requestId } });
     }
   };
 }

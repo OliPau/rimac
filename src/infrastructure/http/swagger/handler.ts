@@ -1,6 +1,7 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from 'aws-lambda';
 import { authorized, type Credentials } from './credentials.ts';
 import { swaggerAssets, type SwaggerAsset } from './assets.ts';
+import { errorDetails, type ErrorDetails } from '@infrastructure/shared/error';
 
 const headers = {
   'cache-control': 'no-store',
@@ -15,7 +16,7 @@ const headers = {
 export function swaggerHandler(
   credentials: () => Promise<Credentials>,
   asset: (entry: SwaggerAsset) => Promise<string>,
-  report: (name: string) => void,
+  report: (details: ErrorDetails) => void,
 ) {
   return async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyStructuredResultV2> => {
     const response = (statusCode: number, body: string) => ({
@@ -46,7 +47,9 @@ export function swaggerHandler(
         body: await asset(entry),
       };
     } catch (error) {
-      report(error instanceof Error ? error.name : 'UnknownError');
+      report(
+        errorDetails(error, { requestId: event.requestContext.requestId, operation: 'Swagger' }),
+      );
       return response(503, 'Documentation temporarily unavailable');
     }
   };

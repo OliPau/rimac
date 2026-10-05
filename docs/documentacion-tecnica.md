@@ -217,7 +217,9 @@ Las colas usan cifrado administrado de SQS; DynamoDB habilita cifrado y los buck
 
 ## Observabilidad y operación
 
-Los logs estructurados incluyen `appointmentId` y `correlationId` en los mensajes procesados correctamente. Los fallos por mensaje registran su `messageId` y tipo de error. CloudWatch conserva los logs de Lambda durante siete días.
+Los logs de errores incluyen operación, tipo, código de dependencia cuando existe y hasta ocho ubicaciones del stack. Los mensajes libres de dependencias se sustituyen por un texto controlado para evitar registrar SQL, credenciales o datos de entrada. Los eventos validados incluyen `appointmentId` y `correlationId`; si falla su validación, se conserva `messageId` sin registrar el cuerpo.
+
+HTTP registra el `requestId` de API Gateway y lo devuelve en `error.requestId` de sus respuestas `503`. El contexto Lambda agrega `function_request_id`, que identifica la ejecución. Los errores de inicialización del worker se registran antes de lanzar un error genérico; así falla la invocación y se conserva el reintento sin exponer la excepción original en los logs del runtime. CloudWatch conserva los logs durante siete días.
 
 | Señal                                                      | Configuración                                                   |
 | ---------------------------------------------------------- | --------------------------------------------------------------- |

@@ -8,5 +8,5 @@ const client = new SecretsManagerClient({ maxAttempts: 2 });
 export const handleSwagger = swaggerHandler(
   secretCredentials(client, env('SWAGGER_SECRET_ARN')),
   (entry) => readFile(entry.file, 'utf8'),
-  (errorName) => logger.error('SwaggerFailed', { errorName }),
+  (details) => logger.error('SwaggerFailed', details),
 );

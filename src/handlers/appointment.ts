@@ -1,5 +1,10 @@
-import type { APIGatewayProxyEventV2, SQSEvent } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, Context, SQSEvent } from 'aws-lambda';
 import { handleConfirmation, handleHttp } from '../composition/appointment.ts';
+import { logger } from '../composition/config.ts';
 
-export const handler = (event: APIGatewayProxyEventV2 | SQSEvent) =>
-  'Records' in event ? handleConfirmation(event) : handleHttp(event);
+export function handler(event: APIGatewayProxyEventV2 | SQSEvent, context?: Context) {
+  if (context) {
+    logger.addContext(context);
+  }
+  return 'Records' in event ? handleConfirmation(event) : handleHttp(event);
+}
